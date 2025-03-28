@@ -1,166 +1,65 @@
 import sys
 from PySide6.QtCore import Slot
-from PySide6.QtGui import QAction, QKeySequence, Qt
-from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QFrame)
+from PySide6.QtGui import QAction, QKeySequence, Qt, QPixmap
+from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QStyleFactory, QSplitter)
 
-#window
-
-#widgets? for map panel and navigation panel
-#navigation panel
-#leave map panel blank for now
-#back button to go back to previous menu
-
-class Widget(QWidget):
+class Map(QWidget):
     def __init__(self):
-        QWidget.__init__(self)
+        super(Map, self).__init__()
 
-        #TODO: put all these buttons into arrays or smn idk how python works
-        self.r1 = QPushButton("Region 1")
-        self.r2 = QPushButton("Region 2")
-        self.r3 = QPushButton("Region 3")
+        vbox = QVBoxLayout(self)
 
-        self.r1c1 = QPushButton("Region 1: City 1")
-        self.r1c2 = QPushButton("Region 1: City 2")
-        self.r1c3 = QPushButton("Region 1: City 3")
-        self.r2c1 = QPushButton("Region 2: City 1")
-        self.r2c2 = QPushButton("Region 2: City 2")
-        self.r2c3 = QPushButton("Region 2: City 3")
-        self.r3c1 = QPushButton("Region 3: City 1")
-        self.r3c2 = QPushButton("Region 3: City 2")
-        self.r3c3 = QPushButton("Region 3: City 3")
+        pixmap = QPixmap("images/map.png") 
+        pixmap = pixmap.scaled(1000, 1000, Qt.KeepAspectRatio)
 
-        self.info_region = QLabel("Select region:")
-        self.info_region.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        self.info_city = QLabel("Select city:")
-        self.info_city.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        self.info_data11 = QLabel("Region 1 City 1 data here")
-        self.info_data12 = QLabel("Region 1 City 2 data here")
-        self.info_data13 = QLabel("Region 1 City 3 data here")
-        self.info_data21 = QLabel("Region 2 City 1 data here")
-        self.info_data22 = QLabel("Region 2 City 2 data here")
-        self.info_data23 = QLabel("Region 2 City 3 data here")
-        self.info_data31 = QLabel("Region 3 City 1 data here")
-        self.info_data32 = QLabel("Region 3 City 2 data here")
-        self.info_data33 = QLabel("Region 3 City 3 data here")
+        lbl = QLabel(self)
+        lbl.setPixmap(pixmap)
+        lbl.setMinimumSize(10, 10)
+        
+        vbox.addWidget(lbl)
 
-        self.map = QLabel("Map goes here")
-        self.map.setAlignment(Qt.AlignCenter)
-        self.map.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.setLayout(vbox)
 
-        self.left = QVBoxLayout()
-        self.left.addWidget(self.info_region, alignment=Qt.AlignLeft | Qt.AlignTop)
-        self.left.addWidget(self.r1, alignment=Qt.AlignLeft | Qt.AlignTop)
-        self.left.addWidget(self.r2, alignment=Qt.AlignLeft | Qt.AlignTop)
-        self.left.addWidget(self.r3, alignment=Qt.AlignLeft | Qt.AlignTop)
+class Splitter(QWidget):
 
-        self.layout = QHBoxLayout(self)
-        self.layout.addLayout(self.left)
-        self.layout.addWidget(self.map)
+    def __init__(self, map):
+        super(Splitter, self).__init__()
 
-        self.r1.clicked.connect(lambda x: self.show_cities(1))
-        self.r2.clicked.connect(lambda x: self.show_cities(2))
-        self.r3.clicked.connect(lambda x: self.show_cities(3))
+        vbox = QVBoxLayout(self)
+        
+        left = QFrame(self)
+        left.setFrameShape(QFrame.StyledPanel)
 
-        self.r1c1.clicked.connect(lambda x: self.show_data(1, 1))
-        self.r1c2.clicked.connect(lambda x: self.show_data(1, 2))
-        self.r1c3.clicked.connect(lambda x: self.show_data(1, 3))
+        right = QFrame(self)
+        right.setFrameShape(QFrame.StyledPanel)
 
-        self.r2c1.clicked.connect(lambda x: self.show_data(2, 1))
-        self.r2c2.clicked.connect(lambda x: self.show_data(2, 2))
-        self.r2c3.clicked.connect(lambda x: self.show_data(2, 3))
+        hbox = QHBoxLayout(right)
+        hbox.addWidget(map)
+        right.setLayout(hbox)
 
-        self.r3c1.clicked.connect(lambda x: self.show_data(3, 1))
-        self.r3c2.clicked.connect(lambda x: self.show_data(3, 2))
-        self.r3c3.clicked.connect(lambda x: self.show_data(3, 3))
+        splitter = QSplitter(Qt.Horizontal)
+        splitter.addWidget(left)
+        splitter.addWidget(right)
 
-    @Slot()
-    def show_cities(self, region_id):
-        self.left.removeWidget(self.info_region)
-        self.left.removeWidget(self.r1)
-        self.left.removeWidget(self.r2)
-        self.left.removeWidget(self.r3)
-        self.info_region.hide()
-        self.r1.hide()
-        self.r2.hide()
-        self.r3.hide()
-        if(region_id == 1):
-            self.left.addWidget(self.info_city, alignment=Qt.AlignLeft | Qt.AlignTop)
-            self.left.addWidget(self.r1c1, alignment=Qt.AlignLeft | Qt.AlignTop)
-            self.left.addWidget(self.r1c2, alignment=Qt.AlignLeft | Qt.AlignTop)
-            self.left.addWidget(self.r1c3, alignment=Qt.AlignLeft | Qt.AlignTop)
-        if(region_id == 2):
-            self.left.addWidget(self.info_city, alignment=Qt.AlignLeft | Qt.AlignTop)
-            self.left.addWidget(self.r2c1, alignment=Qt.AlignLeft | Qt.AlignTop)
-            self.left.addWidget(self.r2c2, alignment=Qt.AlignLeft | Qt.AlignTop)
-            self.left.addWidget(self.r2c3, alignment=Qt.AlignLeft | Qt.AlignTop)
-        if(region_id == 3):
-            self.left.addWidget(self.info_city, alignment=Qt.AlignLeft | Qt.AlignTop)
-            self.left.addWidget(self.r3c1, alignment=Qt.AlignLeft | Qt.AlignTop)
-            self.left.addWidget(self.r3c2, alignment=Qt.AlignLeft | Qt.AlignTop)
-            self.left.addWidget(self.r3c3, alignment=Qt.AlignLeft | Qt.AlignTop)
+        vbox.addWidget(splitter)
 
-    @Slot()
-    def show_data(self, region_id, city_id):
-        self.left.removeWidget(self.info_city)
-        self.info_city.hide()
-        if(region_id == 1):
-            self.left.removeWidget(self.r1c1)
-            self.left.removeWidget(self.r1c2)
-            self.left.removeWidget(self.r1c3)
-            self.r1c1.hide()
-            self.r1c2.hide()
-            self.r1c3.hide()
-            if(city_id == 1):
-                self.left.addWidget(self.info_data11)
-            if(city_id == 2):
-                self.left.addWidget(self.info_data12)
-            if(city_id == 3):
-                self.left.addWidget(self.info_data13)
-        if(region_id == 2):
-            self.left.removeWidget(self.r2c1)
-            self.left.removeWidget(self.r2c2)
-            self.left.removeWidget(self.r2c3)
-            self.r2c1.hide()
-            self.r2c2.hide()
-            self.r2c3.hide()
-            if(city_id == 1):
-                self.left.addWidget(self.info_data21)
-            if(city_id == 2):
-                self.left.addWidget(self.info_data22)
-            if(city_id == 3):
-                self.left.addWidget(self.info_data23)
-        if(region_id == 3):
-            self.left.removeWidget(self.r3c1)
-            self.left.removeWidget(self.r3c2)
-            self.left.removeWidget(self.r3c3)
-            self.r3c1.hide()
-            self.r3c2.hide()
-            self.r3c3.hide()
-            if(city_id == 1):
-                self.left.addWidget(self.info_data31)
-            if(city_id == 2):
-                self.left.addWidget(self.info_data32)
-            if(city_id == 3):
-                self.left.addWidget(self.info_data33)
-
-
-
-
+        self.setLayout(vbox)
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, widget):
+    def __init__(self, splitter):
         QMainWindow.__init__(self)
         self.setWindowTitle("4CASTX")
-
-        self.setCentralWidget(widget)
+        self.setCentralWidget(splitter)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    app.setStyle(QStyleFactory.create('Cleanlooks'))
 
-    widget = Widget()
-    window = MainWindow(widget)
-    window.resize(800, 600)
+    map = Map()
+    split = Splitter(map)
+    window = MainWindow(split)
+    window.setGeometry(300, 300, 1500, 900)
     window.show()
 
     sys.exit(app.exec())
