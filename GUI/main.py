@@ -2,7 +2,7 @@ import sys
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QAction, QKeySequence, Qt, QPixmap
 from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QStyleFactory, QSplitter, QGridLayout)
-from map import Map
+from map import Map, MapCanvas
 from datapanel import DataPanel
 
 def LDEBUG(message):
@@ -61,7 +61,8 @@ if __name__ == '__main__':
     app.setStyle(QStyleFactory.create('Cleanlooks'))
 
     panel = DataPanel()
-    map = Map()
+    canvas = MapCanvas()
+    map = Map(canvas)
     split = Splitter(map, panel)
     window = MainWindow(split)
     window.back_click.triggered.connect(panel.back_click)
