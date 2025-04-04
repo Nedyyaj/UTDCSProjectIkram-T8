@@ -3,18 +3,33 @@ from PySide6.QtCore import Slot
 from PySide6.QtGui import QAction, QKeySequence, Qt, QPixmap
 from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QStyleFactory, QSplitter, QGridLayout)
 
+from matplotlib.backends.backend_qtagg import FigureCanvas
+from matplotlib.figure import Figure
+
+import geopandas
+
 def LDEBUG(message):
     print(f"[DEBUG]: {message}")
 
 def LERROR(message):
     print(f"[ERROR]: {message}")
 
-class Map(QWidget):
+class Map(FigureCanvas):
     def __init__(self):
         super(Map, self).__init__()
 
-        vbox = QVBoxLayout(self)
+        fig = Figure(dpi=100)
+        self.figure = fig
+        self.canvas = FigureCanvas(self.figure)
+        self.axes=fig.add_subplot()
+        counties = geopandas.read_file(r"map\Select Counties\selected.shp")
+        counties = counties.to_crs("EPSG:3395")
+        counties.boundary.plot(ax=self.axes)
+        #self.axes.plot(counties)
+        self.draw()
 
+        
+'''
         pixmap = QPixmap("images/map.png") 
         pixmap = pixmap.scaled(1000, 1000, Qt.KeepAspectRatio)
 
@@ -23,8 +38,8 @@ class Map(QWidget):
         lbl.setMinimumSize(10, 10)
         
         vbox.addWidget(lbl)
+'''
 
-        self.setLayout(vbox)
 
 
 class DataPanel(QWidget):
@@ -132,6 +147,7 @@ class Splitter(QWidget):
         lvbox = QVBoxLayout(left)
         lvbox.addWidget(data_panel)
         left.setLayout(lvbox)
+        left.setMinimumWidth(250)
 
         right = QFrame(self)
         right.setFrameShape(QFrame.StyledPanel)
@@ -142,10 +158,12 @@ class Splitter(QWidget):
         splitter = QSplitter(Qt.Horizontal)
         splitter.addWidget(left)
         splitter.addWidget(right)
+        right.setMinimumWidth(700)
 
         vbox.addWidget(splitter)
 
         self.setLayout(vbox)
+        splitter.setChildrenCollapsible(False)
 
 
 class MainWindow(QMainWindow):
