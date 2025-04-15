@@ -11,8 +11,6 @@ def LDEBUG(message):
 def LERROR(message):
     print(f"[ERROR]: {message}")
 
-
-
 class Splitter(QWidget):
 
     def __init__(self, map, data_panel):
@@ -61,11 +59,10 @@ if __name__ == '__main__':
     app.setStyle(QStyleFactory.create('Cleanlooks'))
 
     panel = DataPanel()
-    canvas = MapCanvas()
+    canvas = MapCanvas(panel)
     map = Map(canvas)
     split = Splitter(map, panel)
     window = MainWindow(split)
-    window.back_click.triggered.connect(panel.back_click)
     window.resize(1500, 900)
     window.show()
 
