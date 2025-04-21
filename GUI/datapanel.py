@@ -47,13 +47,10 @@ county_dict = {
 class CountyData():
     def __init__(self, name):
         self.name = name
-        self.avg_temp = df.loc[0, name + "_avg_temp"]
-        self.min_temp = df.loc[0, name + "_min_temp"]
-        self.max_temp = df.loc[0, name + "_max_temp"]
-        self.precip = df.loc[0, name + "_precip"]
+        self.temp = df.loc[0, name + "_temperature"]
+        self.precip = df.loc[0, name + "_precipitation"]
         self.snow = df.loc[0, name + "_snow"]
-        self.avg_wind = df.loc[0, name + "_avg_wind"]
-        self.max_wind = df.loc[0, name + "_max_wind"]
+        self.wind = df.loc[0, name + "_wind_speed"]
 
 class DataPanel(QWidget):
     def __init__(self):
@@ -91,58 +88,42 @@ class DataPanel(QWidget):
         self.data[29] = CountyData('Bosque')
 
         self.county = 'None'
-        self.avg_temp = 0.0
-        self.min_temp = 0.0
-        self.max_temp = 0.0
+        self.temp = 0.0
         self.precip = 0.0
         self.snow = 0.0
-        self.avg_wind= 0.0
-        self.max_wind = 0.0
+        self.wind= 0.0
 
+        county_Window = QWidget()
         grid = QGridLayout(self)
+        
         self.county_value   = QLabel(str(self.county))
-        self.avg_temp_value = QLabel(str(self.avg_temp))
-        self.min_temp_value = QLabel(str(self.min_temp))
-        self.max_temp_value = QLabel(str(self.max_temp))
+        self.temp_value     = QLabel(str(self.temp))
         self.precip_value   = QLabel(str(self.precip))
         self.snow_value     = QLabel(str(self.snow))
-        self.avg_wind_value = QLabel(str(self.avg_wind))
-        self.max_wind_value = QLabel(str(self.max_wind))
+        self.wind_value     = QLabel(str(self.wind))
 
         self.county_label   = QLabel('County:')
-        self.avg_temp_label = QLabel('Average Temperature:')
-        self.min_temp_label = QLabel('Minimum Temperature:')
-        self.max_temp_label = QLabel('Maximum Temperature:')
+        self.temp_label     = QLabel('Temperature:')
         self.precip_label   = QLabel('Precipitation:')
         self.snow_label     = QLabel('Snow:')
-        self.avg_wind_label = QLabel('Average Wind:')
-        self.max_wind_label = QLabel('Maximum Wind:')
+        self.wind_label     = QLabel('Wind:')
 
         grid.addWidget(self.county_value,   0, 1)
-        grid.addWidget(self.avg_temp_value, 1, 1)
-        grid.addWidget(self.min_temp_value, 2, 1)
-        grid.addWidget(self.max_temp_value, 3, 1)
-        grid.addWidget(self.precip_value,   4, 1)
-        grid.addWidget(self.snow_value,     5, 1)
-        grid.addWidget(self.avg_wind_value, 6, 1)
-        grid.addWidget(self.max_wind_value, 7, 1)
+        grid.addWidget(self.temp_value,     1, 1)
+        grid.addWidget(self.precip_value,   2, 1)
+        grid.addWidget(self.snow_value,     3, 1)
+        grid.addWidget(self.wind_value,     4, 1)
 
         grid.addWidget(self.county_label,   0, 0)
-        grid.addWidget(self.avg_temp_label, 1, 0)
-        grid.addWidget(self.min_temp_label, 2, 0)
-        grid.addWidget(self.max_temp_label, 3, 0)
-        grid.addWidget(self.precip_label,   4, 0)
-        grid.addWidget(self.snow_label,     5, 0)
-        grid.addWidget(self.avg_wind_label, 6, 0)
-        grid.addWidget(self.max_wind_label, 7, 0)
+        grid.addWidget(self.temp_label,     1, 0)
+        grid.addWidget(self.precip_label,   2, 0)
+        grid.addWidget(self.snow_label,     3, 0)
+        grid.addWidget(self.wind_label,     4, 0)
         self.setLayout(grid)
 
     def on_county_selected(self, county):
         self.county_value.setText   (str(self.data[county_dict[county]].name))
-        self.avg_temp_value.setText (str(self.data[county_dict[county]].avg_temp))
-        self.min_temp_value.setText (str(self.data[county_dict[county]].min_temp))
-        self.max_temp_value.setText (str(self.data[county_dict[county]].max_temp))
+        self.temp_value.setText (str(self.data[county_dict[county]].temp))
         self.precip_value.setText   (str(self.data[county_dict[county]].precip))
         self.snow_value.setText     (str(self.data[county_dict[county]].snow))
-        self.avg_wind_value.setText (str(self.data[county_dict[county]].avg_wind))
-        self.max_wind_value.setText (str(self.data[county_dict[county]].max_wind))
+        self.wind_value.setText (str(self.data[county_dict[county]].wind))
