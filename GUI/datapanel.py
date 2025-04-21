@@ -1,7 +1,7 @@
 import sys
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QAction, QKeySequence, Qt, QPixmap
-from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QStyleFactory, QSplitter, QGridLayout)
+from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QStyleFactory, QSplitter, QGridLayout, QGraphicsGridLayout, QGraphicsProxyWidget, QGraphicsScene, QGraphicsWidget, QGraphicsView, QSizePolicy)
 import pandas as pd
 
 df = pd.read_csv("../backend/preprocessing/county_variables.csv")
@@ -93,9 +93,45 @@ class DataPanel(QWidget):
         self.snow = 0.0
         self.wind= 0.0
 
+        # Initialize the windows required for the GUI
+        main_Window = QWidget(self)
+        main_Window_Grid = QGridLayout()
         county_Window = QWidget()
-        grid = QGridLayout(self)
+        grid = QGridLayout()
         
+        # Prep the VBOX and Grid Layout for the main window view
+        # Edit Label
+        label = QLabel("Select a County")
+        label.setAlignment(Qt.AlignCenter)
+        label.setMaximumHeight(30)
+        label.setStyleSheet("font-size: 25px; font-weight: bold;")
+        label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+
+        main_Window_Grid.addWidget(label)
+        vBox = QVBoxLayout()
+        vBox.addWidget(label)
+        vBox.setSpacing(0)
+
+        
+        # Create the grid layout for the county buttons
+        counter = 0
+        column = 0
+        row = 2
+        for county in county_stations:
+            button = QPushButton(county)
+            print(county)
+            button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+            button.sizeIncrement()
+            main_Window_Grid.addWidget(button, row, column)
+            row += 1
+            counter += 1
+            if counter == 15:
+                row = 2
+                column += 1
+
+        # Add grid to the vbox layout
+        vBox.addLayout(main_Window_Grid)
+
         self.county_value   = QLabel(str(self.county))
         self.temp_value     = QLabel(str(self.temp))
         self.precip_value   = QLabel(str(self.precip))
@@ -119,7 +155,9 @@ class DataPanel(QWidget):
         grid.addWidget(self.precip_label,   2, 0)
         grid.addWidget(self.snow_label,     3, 0)
         grid.addWidget(self.wind_label,     4, 0)
-        self.setLayout(grid)
+
+        main_Window = vBox
+        self.setLayout(main_Window)
 
     def on_county_selected(self, county):
         self.county_value.setText   (str(self.data[county_dict[county]].name))
