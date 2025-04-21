@@ -1,10 +1,12 @@
 from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QStyleFactory, QSplitter, QGridLayout)
 from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 import geopandas
 import fiona
 import shapefile
 from shapely.geometry import (Point, shape)
+from datapanel import DataPanel
 
 def LDEBUG(message):
     print(f"[DEBUG]: {message}")
@@ -16,18 +18,24 @@ class Map(QWidget):
         layout.addWidget(canvas)
 
 class MapCanvas(FigureCanvas):
-    def __init__(self):
+    def __init__(self, datapanel):
         super(MapCanvas, self).__init__()
+
+        self.datapanel = datapanel
 
         fig = Figure(dpi=100)
         self.figure = fig
         self.canvas = FigureCanvas(self.figure)
         self.axes=fig.add_subplot()
-        #self.axes.set_axis_off()
+        self.axes.set_axis_off()
         self.counties = geopandas.read_file(r"map\Select Counties\selected.shp")
-        self.counties = self.counties.to_crs("EPSG:3395")
-        self.counties.boundary.plot(ax=self.axes)
-        #self.axes.plot(counties)
+        self.counties['coords'] = self.counties['geometry'].apply(lambda x: x.representative_point().coords[:])
+        self.counties['coords'] = [coords[0] for coords in self.counties['coords']]
+
+        cmap = plt.cm.Pastel1
+        plot = self.counties.plot(ax=self.axes, cmap=cmap)
+        self.counties.apply(lambda x: plot.annotate(text=x['CNTY_NM'], xy=x.geometry.centroid.coords[0], ha='center'), axis=1)
+
         self.mpl_connect("button_press_event", self.on_click)
         self.draw()
 
@@ -45,20 +53,5 @@ class MapCanvas(FigureCanvas):
                 boundary = shape(rec['geometry'])
                 if boundary.distance(mouse_pos) < min_distance:
                     name = rec['properties']['CNTY_NM']
-                    LDEBUG(f"selected region: {name}")
-
-
-
-        
-'''
-        pixmap = QPixmap("images/map.png") 
-        pixmap = pixmap.scaled(1000, 1000, Qt.KeepAspectRatio)
-
-        lbl = QLabel(self)
-        lbl.setPixmap(pixmap)
-        lbl.setMinimumSize(10, 10)
-        
-        vbox.addWidget(lbl)
-'''
-
-    
+                    print(name)
+                    self.datapanel.on_county_selected(name)
