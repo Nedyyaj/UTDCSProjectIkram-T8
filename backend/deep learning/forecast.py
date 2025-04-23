@@ -75,7 +75,7 @@ def train_model(obs_filepath, lookback, hidden_dim, epochs, train_pct, num_layer
         test_rmse = np.sqrt(loss_fn(y_pred, y_test))
     print("Final model: train RMSE %.4f, test RMSE %.4f" % (train_rmse, test_rmse))
 
-    return model
+    return model, train_rmse, test_rmse
 
 def generate_forecast(model, previous_observations, days_forward):
     steps_forward = 4 * days_forward
@@ -154,8 +154,14 @@ class Forecaster:
         self.num_layers = 1 if 'num_layers' not in kwargs else kwargs['num_layers']
         self.forecast_filepath = forecast_filepath
     def train(self):
-        self.model = train_model(self.obs_filepath, 4 * self.days_lookback, self.lstm_hidden_dim, self.epochs_to_train, self.train_pct, self.num_layers)
-    def generate(self, from_date, for_days=7):
+        self.model, train_rmse, test_rmse = train_model(self.obs_filepath, 4 * self.days_lookback, self.lstm_hidden_dim, self.epochs_to_train, self.train_pct, self.num_layers)
+        return train_rmse, test_rmse
+    def generate(self, from_date, for_days=7, obs_path=None, forecast_path=None):
+        if obs_path:
+            self.obs_filepath = obs_path
+        if forecast_path:
+            self.forecast_filepath = forecast_path
+
         date = pd.to_datetime(from_date)
         start = date - pd.Timedelta(days=self.days_lookback)
         end = date - pd.Timedelta(days=1)
