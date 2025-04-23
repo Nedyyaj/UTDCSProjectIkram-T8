@@ -1,6 +1,6 @@
 import sys
 from PySide6.QtCore import Slot
-from PySide6.QtGui import QAction, QKeySequence, Qt, QPixmap
+from PySide6.QtGui import QAction, QKeySequence, Qt, QPixmap, QPainter
 from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QStyleFactory, QSplitter, QGridLayout, QGraphicsGridLayout, QGraphicsProxyWidget, QGraphicsScene, QGraphicsWidget, QGraphicsView, QSizePolicy)
 import pandas as pd
 
@@ -48,9 +48,6 @@ county_dict = {
     'Somervell': 28, 
     'Bosque': 29
 }
-
-
-
 
 
 class CountyData():
@@ -108,7 +105,10 @@ class DataPanel(QWidget):
         county_Window = QWidget()
         self.grid = QGridLayout()
         
+        #--------------------------------------------------
         # Prep the VBOX and Grid Layout for the main window view
+        #--------------------------------------------------
+
         # Edit Label
         label = QLabel("Select a County")
         label.setAlignment(Qt.AlignCenter)
@@ -116,13 +116,14 @@ class DataPanel(QWidget):
         label.setStyleSheet("font-size: 25px; font-weight: bold;")
         label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
+        # Combining everything into vBox layout so it is stacked vertically
         main_Window_Grid.addWidget(label)
-        vBox = QVBoxLayout()
-        vBox.addWidget(label)
-        vBox.setSpacing(0)
+        mainWindow_vBox = QVBoxLayout()
+        mainWindow_vBox.addWidget(label)
+        mainWindow_vBox.setSpacing(0)
 
         
-        # Create the grid layout for the county buttons
+        # Create the grid layout for the county buttons under main_Window_Grid to add to the vbox layout
         counter = 0
         column = 0
         row = 2
@@ -138,9 +139,13 @@ class DataPanel(QWidget):
                 column += 1
 
         # Add grid to the vbox layout
-        vBox.addLayout(main_Window_Grid)
+        mainWindow_vBox.addLayout(main_Window_Grid)
 
-        self.county_value   = QLabel(str(self.county))
+        # Creates the grid layout for the county data #
+        #--------------------------------------------------
+        #         Place Holder for real data view
+        #--------------------------------------------------
+        self.county_value   = QLabel(str(self.county), margin=5)
         self.temp_value     = QLabel(str(self.temp))
         self.precip_value   = QLabel(str(self.precip))
         self.snow_value     = QLabel(str(self.snow))
@@ -152,21 +157,27 @@ class DataPanel(QWidget):
         self.snow_label     = QLabel('Snow:')
         self.wind_label     = QLabel('Wind:')
 
-        self.grid.addWidget(self.county_value,   0, 1)
-        self.grid.addWidget(self.temp_value,     1, 1)
-        self.grid.addWidget(self.precip_value,   2, 1)
-        self.grid.addWidget(self.snow_value,     3, 1)
-        self.grid.addWidget(self.wind_value,     4, 1)
+        self.grid.addWidget(self.county_value,   0, 1, alignment=Qt.AlignCenter)
+        self.grid.addWidget(self.temp_value,     1, 1, alignment=Qt.AlignCenter)
+        self.grid.addWidget(self.precip_value,   2, 1, alignment=Qt.AlignCenter)
+        self.grid.addWidget(self.snow_value,     3, 1, alignment=Qt.AlignCenter)
+        self.grid.addWidget(self.wind_value,     4, 1, alignment=Qt.AlignCenter)
 
-        self.grid.addWidget(self.county_label,   0, 0)
-        self.grid.addWidget(self.temp_label,     1, 0)
-        self.grid.addWidget(self.precip_label,   2, 0)
-        self.grid.addWidget(self.snow_label,     3, 0)
-        self.grid.addWidget(self.wind_label,     4, 0)
+        self.grid.addWidget(self.county_label,   0, 0, alignment=Qt.AlignCenter)
+        self.grid.addWidget(self.temp_label,     1, 0, alignment=Qt.AlignCenter)
+        self.grid.addWidget(self.precip_label,   2, 0, alignment=Qt.AlignCenter)
+        self.grid.addWidget(self.snow_label,     3, 0, alignment=Qt.AlignCenter)
+        self.grid.addWidget(self.wind_label,     4, 0, alignment=Qt.AlignCenter)
+        
+        #--------------------------------------------------
+        #      End of Place Holder for real data view
+        #--------------------------------------------------
 
-        self.main_Window = vBox
+        #Adds the grid layout to the vbox layout
+        self.main_Window = mainWindow_vBox
+        self.hide_data()
         self.setLayout(self.main_Window)
-
+        #self.setLayout(county_Window)  
         
 
         #when the button is clicked, call the on_click method
@@ -183,10 +194,14 @@ class DataPanel(QWidget):
         self.snow_value.setText     (str(self.data[county_dict[county]].snow))
         self.wind_value.setText (str(self.data[county_dict[county]].wind))
 
+
+        #self.main_Window.addLayout(self.grid)
+
     #--------------------------------#
     # DEFINES THE USE OF THE BUTTONS
     #--------------------------------#
     def on_click(self, button):
+
         # Get the name of the button that was clicked
         name = button.text()
         LDEBUG(f"Button clicked: {name}")
@@ -204,11 +219,30 @@ class DataPanel(QWidget):
         LDEBUG(f"Snow is: {self.snow_value.text()}")
         LDEBUG(f"Wind is: {self.wind_value.text()}")
 
-        # self.setLayout()
+        self.show_data()
+
+    #--------------------------------#
+    # Defines the viewing and hiding of the data grid
+    #--------------------------------#
+    def show_data(self):
         self.main_Window.addLayout(self.grid)
-        # self.grid.show()
+        #self.draw_divider() # Drawing not implemented yet
+        LDEBUG("Data grid shown")
+    def hide_data(self):
+        self.main_Window.removeItem(self.grid)
+        LDEBUG("Data grid hidden")
+    #--------------------------------#
+    # End of the button click method
+    #--------------------------------#
 
-        # Update the labels with the data for the selected county
-        return name
-
-        
+    #-------------------------------------------------#
+    # Draws the line for seperation and viewing of data 
+    #-------------------------------------------------#
+    # INCOMPLETE: This function is not used in the current code.
+    # ------------------------------------------------#
+    def draw_divider(self):
+        painter = QtGui.QPainter(self)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+        painter.setPen(QtCore.Qt.GlobalColor.green)
+        painter.setBrush(QtCore.Qt.GlobalColor.white)
+        painter.drawLine(500, 500, 700, 700)
