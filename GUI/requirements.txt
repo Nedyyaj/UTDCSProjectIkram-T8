@@ -1,0 +1,5 @@
+pip install pyshp
+pip install geopandas
+pip install fiona
+pip install matplotlib
+pip install pyside6
