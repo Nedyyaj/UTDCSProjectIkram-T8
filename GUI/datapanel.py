@@ -4,6 +4,11 @@ from PySide6.QtGui import QAction, QKeySequence, Qt, QPixmap
 from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QStyleFactory, QSplitter, QGridLayout, QGraphicsGridLayout, QGraphicsProxyWidget, QGraphicsScene, QGraphicsWidget, QGraphicsView, QSizePolicy)
 import pandas as pd
 
+
+def LDEBUG(message):
+    print(f"[DEBUG]: {message}")
+
+
 df = pd.read_csv("../backend/preprocessing/county_variables.csv")
 
 county_stations = {
@@ -43,6 +48,10 @@ county_dict = {
     'Somervell': 28, 
     'Bosque': 29
 }
+
+
+
+
 
 class CountyData():
     def __init__(self, name):
@@ -93,11 +102,11 @@ class DataPanel(QWidget):
         self.snow = 0.0
         self.wind= 0.0
 
-        # Initialize the windows required for the GUI
-        main_Window = QWidget(self)
+       # Initialize the windows required for the GUI
+        self.main_Window = QWidget()
         main_Window_Grid = QGridLayout()
         county_Window = QWidget()
-        grid = QGridLayout()
+        self.grid = QGridLayout()
         
         # Prep the VBOX and Grid Layout for the main window view
         # Edit Label
@@ -119,7 +128,6 @@ class DataPanel(QWidget):
         row = 2
         for county in county_stations:
             button = QPushButton(county)
-            print(county)
             button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
             button.sizeIncrement()
             main_Window_Grid.addWidget(button, row, column)
@@ -144,20 +152,29 @@ class DataPanel(QWidget):
         self.snow_label     = QLabel('Snow:')
         self.wind_label     = QLabel('Wind:')
 
-        grid.addWidget(self.county_value,   0, 1)
-        grid.addWidget(self.temp_value,     1, 1)
-        grid.addWidget(self.precip_value,   2, 1)
-        grid.addWidget(self.snow_value,     3, 1)
-        grid.addWidget(self.wind_value,     4, 1)
+        self.grid.addWidget(self.county_value,   0, 1)
+        self.grid.addWidget(self.temp_value,     1, 1)
+        self.grid.addWidget(self.precip_value,   2, 1)
+        self.grid.addWidget(self.snow_value,     3, 1)
+        self.grid.addWidget(self.wind_value,     4, 1)
 
-        grid.addWidget(self.county_label,   0, 0)
-        grid.addWidget(self.temp_label,     1, 0)
-        grid.addWidget(self.precip_label,   2, 0)
-        grid.addWidget(self.snow_label,     3, 0)
-        grid.addWidget(self.wind_label,     4, 0)
+        self.grid.addWidget(self.county_label,   0, 0)
+        self.grid.addWidget(self.temp_label,     1, 0)
+        self.grid.addWidget(self.precip_label,   2, 0)
+        self.grid.addWidget(self.snow_label,     3, 0)
+        self.grid.addWidget(self.wind_label,     4, 0)
 
-        main_Window = vBox
-        self.setLayout(main_Window)
+        self.main_Window = vBox
+        self.setLayout(self.main_Window)
+
+        
+
+        #when the button is clicked, call the on_click method
+        for i in range(1, 30):
+            button = main_Window_Grid.itemAt(i).widget()
+            name = button.clicked.connect(lambda _, b = button: self.on_click(b))
+            
+
 
     def on_county_selected(self, county):
         self.county_value.setText   (str(self.data[county_dict[county]].name))
@@ -165,3 +182,33 @@ class DataPanel(QWidget):
         self.precip_value.setText   (str(self.data[county_dict[county]].precip))
         self.snow_value.setText     (str(self.data[county_dict[county]].snow))
         self.wind_value.setText (str(self.data[county_dict[county]].wind))
+
+    #--------------------------------#
+    # DEFINES THE USE OF THE BUTTONS
+    #--------------------------------#
+    def on_click(self, button):
+        # Get the name of the button that was clicked
+        name = button.text()
+        LDEBUG(f"Button clicked: {name}")
+
+        self.county_value.setText   (str(self.data[county_dict[name]].name))
+        self.temp_value.setText (str(self.data[county_dict[name]].temp))
+        self.precip_value.setText   (str(self.data[county_dict[name]].precip))
+        self.snow_value.setText     (str(self.data[county_dict[name]].snow))
+        self.wind_value.setText (str(self.data[county_dict[name]].wind))
+
+        
+        LDEBUG(f"County is: {self.county_value.text()}")
+        LDEBUG(f"Temperature is: {self.temp_value.text()}")
+        LDEBUG(f"Precipitation is: {self.precip_value.text()}")
+        LDEBUG(f"Snow is: {self.snow_value.text()}")
+        LDEBUG(f"Wind is: {self.wind_value.text()}")
+
+        # self.setLayout()
+        self.main_Window.addLayout(self.grid)
+        # self.grid.show()
+
+        # Update the labels with the data for the selected county
+        return name
+
+        
