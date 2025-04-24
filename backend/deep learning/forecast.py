@@ -33,6 +33,12 @@ def train_model(obs_filepath, lookback, hidden_dim, epochs, train_pct, num_layer
     data.insert(1, 'DoySin', np.sin(2*np.pi*doy/365.25))
     data.insert(2, 'DoyCos', np.cos(2*np.pi*doy/365.25))
 
+    # adjust the temperatures and wind speed to be on the same scale as the precip and snow
+    temp_cols = [col for col in data.columns if 'temp' in col]
+    wind_cols = [col for col in data.columns if 'wind' in col]
+    data[temp_cols] = data[temp_cols] / 100.0
+    data[wind_cols] = data[wind_cols] / 100.0
+
     data = torch.from_numpy(data.drop('Date', axis=1).values).float()
     training_len = int(len(data) * train_pct)
     train, test = data[:training_len], data[training_len:]
@@ -122,6 +128,13 @@ def fetch_previous_observations(obs_filepath, from_date, to_date):
     data.insert(0, 'Doy', doy/365.25)
     data.insert(1, 'DoySin', np.sin(2*np.pi*doy/365.25))
     data.insert(2, 'DoyCos', np.cos(2*np.pi*doy/365.25))
+
+    # adjust the temperatures and wind speed to be on the same scale as the precip and snow
+    temp_cols = [col for col in data.columns if 'temp' in col]
+    wind_cols = [col for col in data.columns if 'wind' in col]
+    data[temp_cols] = data[temp_cols] / 100.0
+    data[wind_cols] = data[wind_cols] / 100.0
+
     data = torch.from_numpy(data.values).float()
     return data
 
@@ -132,6 +145,12 @@ def save_forecast(forecast_filepath, forecast, days_forecast, obs_filepath, firs
     
     df = pd.DataFrame(list(forecast), columns=(['Doy', 'DoySin', 'DoyCos'] + cols[1:])).round(2)
     df[df < 0] = 0
+
+    # bring the temperature and wind up to where they should be
+    temp_cols = [col for col in df.columns if 'temp' in col]
+    wind_cols = [col for col in df.columns if 'wind' in col]
+    df[temp_cols] = df[temp_cols] * 100.0
+    df[wind_cols] = df[wind_cols] * 100.0
     
     date = pd.to_datetime(first_date)
     dates = []
