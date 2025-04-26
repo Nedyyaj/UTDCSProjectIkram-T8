@@ -3,6 +3,7 @@ from PySide6.QtCore import Slot
 from PySide6.QtGui import QAction, QKeySequence, Qt, QPixmap, QPainter
 from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QStyleFactory, QSplitter, QGridLayout, QGraphicsGridLayout, QGraphicsProxyWidget, QGraphicsScene, QGraphicsWidget, QGraphicsView, QSizePolicy)
 import pandas as pd
+import pickle as pkl
 
 
 def LDEBUG(message):
@@ -100,7 +101,7 @@ class DataPanel(QWidget):
         self.wind= 0.0
 
        # Initialize the windows required for the GUI
-        self.main_Window = QWidget()
+        self.main_Window = QWidget(self)
         main_Window_Grid = QGridLayout()
         county_Window = QWidget()
         self.grid = QGridLayout()
@@ -118,9 +119,10 @@ class DataPanel(QWidget):
 
         # Combining everything into vBox layout so it is stacked vertically
         main_Window_Grid.addWidget(label)
-        mainWindow_vBox = QVBoxLayout()
-        mainWindow_vBox.addWidget(label)
-        mainWindow_vBox.setSpacing(0)
+
+        self.mainWindow_vBox = QVBoxLayout()
+        self.mainWindow_vBox.addWidget(label)
+        self.mainWindow_vBox.setSpacing(0)
 
         
         # Create the grid layout for the county buttons under main_Window_Grid to add to the vbox layout
@@ -139,7 +141,7 @@ class DataPanel(QWidget):
                 column += 1
 
         # Add grid to the vbox layout
-        mainWindow_vBox.addLayout(main_Window_Grid)
+        self.mainWindow_vBox.addLayout(main_Window_Grid)
 
         # Creates the grid layout for the county data #
         #--------------------------------------------------
@@ -174,7 +176,7 @@ class DataPanel(QWidget):
         #--------------------------------------------------
 
         #Adds the grid layout to the vbox layout
-        self.main_Window = mainWindow_vBox
+        self.main_Window = self.mainWindow_vBox
         self.hide_data()
         self.setLayout(self.main_Window)
         #self.setLayout(county_Window)  
@@ -189,10 +191,10 @@ class DataPanel(QWidget):
 
     def on_county_selected(self, county):
         self.county_value.setText   (str(self.data[county_dict[county]].name))
-        self.temp_value.setText (str(self.data[county_dict[county]].temp))
+        self.temp_value.setText     (str(self.data[county_dict[county]].temp))
         self.precip_value.setText   (str(self.data[county_dict[county]].precip))
         self.snow_value.setText     (str(self.data[county_dict[county]].snow))
-        self.wind_value.setText (str(self.data[county_dict[county]].wind))
+        self.wind_value.setText     (str(self.data[county_dict[county]].wind))
 
 
         #self.main_Window.addLayout(self.grid)
@@ -207,10 +209,10 @@ class DataPanel(QWidget):
         LDEBUG(f"Button clicked: {name}")
 
         self.county_value.setText   (str(self.data[county_dict[name]].name))
-        self.temp_value.setText (str(self.data[county_dict[name]].temp))
+        self.temp_value.setText     (str(self.data[county_dict[name]].temp))
         self.precip_value.setText   (str(self.data[county_dict[name]].precip))
         self.snow_value.setText     (str(self.data[county_dict[name]].snow))
-        self.wind_value.setText (str(self.data[county_dict[name]].wind))
+        self.wind_value.setText     (str(self.data[county_dict[name]].wind))
 
         
         LDEBUG(f"County is: {self.county_value.text()}")
@@ -220,14 +222,15 @@ class DataPanel(QWidget):
         LDEBUG(f"Wind is: {self.wind_value.text()}")
 
         self.show_data()
+        self.hide_buttons()
 
     #--------------------------------#
     # Defines the viewing and hiding of the data grid
     #--------------------------------#
     def show_data(self):
         self.main_Window.addLayout(self.grid)
-        #self.draw_divider() # Drawing not implemented yet
         LDEBUG("Data grid shown")
+
     def hide_data(self):
         self.main_Window.removeItem(self.grid)
         LDEBUG("Data grid hidden")
@@ -235,14 +238,16 @@ class DataPanel(QWidget):
     # End of the button click method
     #--------------------------------#
 
-    #-------------------------------------------------#
-    # Draws the line for seperation and viewing of data 
-    #-------------------------------------------------#
-    # INCOMPLETE: This function is not used in the current code.
-    # ------------------------------------------------#
-    def draw_divider(self):
-        painter = QtGui.QPainter(self)
-        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
-        painter.setPen(QtCore.Qt.GlobalColor.green)
-        painter.setBrush(QtCore.Qt.GlobalColor.white)
-        painter.drawLine(500, 500, 700, 700)
+    #--------------------------------#
+    # Defines the viewing and hiding of the vBoxButton grid
+    #--------------------------------#
+    def show_buttons(self):
+        self.main_Window.addLayout(self.mainWindow_vBox)
+        LDEBUG("Button grid shown")
+
+    def hide_buttons(self):
+        self.main_Window.removeItem(self.main_Window)
+        LDEBUG("Button grid hidden")
+    #--------------------------------#
+    # End of the button click method
+    #--------------------------------#

@@ -28,10 +28,10 @@ def create_dataset(dataset, lookback):
 
 def train_model(obs_filepath, lookback, hidden_dim, epochs, train_pct):
     data = pd.read_csv(obs_filepath)
+    data.insert(0, 'Day of Year', pd.to_datetime(data['Date']).dt.day_of_year)
 
     data = torch.from_numpy(data.drop('Date', axis=1).values).float()
     training_len = int(len(data) * train_pct)
-    test_len = len(data) - training_len
     train, test = data[:training_len], data[training_len:]
     
     X_train, y_train = create_dataset(train, lookback=lookback)
@@ -78,20 +78,29 @@ def generate_forecast(model, previous_observations, days_forward):
     steps_forward = 4 * days_forward
     previous = previous_observations
 
+    day = previous_observations[-1][0]
+    if day >= 365:
+        day = 1
+    else:
+        day += 1
     hour = 6
     forecast = []
     with torch.no_grad():
         for i in range(steps_forward):
             pred = model(previous)
             pred = pred[-1:,:]
-    
-            # correct for any error in the next predicted hour
-            pred[-1, 0] = hour
+            
+            pred[-1, 0] = day
+            pred[-1, 1] = hour
             if hour == 24:
+                if day == 365:
+                    day = 1
+                else:
+                    day += 1
                 hour = 6
             else:
                 hour += 6
-            
+
             forecast.append(pred[-1, :])
             previous = torch.cat((previous[1:, :], pred), dim=0)
     
@@ -103,7 +112,9 @@ def fetch_previous_observations(obs_filepath, from_date, to_date):
     data.set_index(['Date', 'Hour'], inplace=True)
     data = data.loc[(from_date, 6):(to_date, 24)]
     data.reset_index(inplace=True)
+    doy = pd.to_datetime(data['Date']).dt.day_of_year
     data.drop('Date', axis=1, inplace=True)
+    data.insert(0, 'Day of Year', doy)
     data = torch.from_numpy(data.values).float()
     return data
 
@@ -112,7 +123,7 @@ def save_forecast(forecast_filepath, forecast, days_forecast, obs_filepath, firs
         reader = csv.reader(ff)
         cols = next(reader)
     
-    df = pd.DataFrame(list(forecast), columns=cols[1:]).round(2)
+    df = pd.DataFrame(list(forecast), columns=(['Day of Year'] + cols[1:])).round(2)
     df[df < 0] = 0
     
     date = pd.to_datetime(first_date)
