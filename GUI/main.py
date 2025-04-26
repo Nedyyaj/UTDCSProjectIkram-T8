@@ -48,11 +48,11 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("4CASTX")
         self.setCentralWidget(splitter)
         
-        self.back_click = QAction("Back", self)
-        self.back_click.setShortcut('Q')
+        # self.back_click = QAction("Back", self)
+        # self.back_click.setShortcut('Q')
 
-        self.toolbar = self.addToolBar("Back")
-        self.toolbar.addAction(self.back_click)
+        # self.toolbar = self.addToolBar("Back")
+        # self.toolbar.addAction(self.back_click)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
