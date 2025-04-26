@@ -46,6 +46,8 @@ class MapCanvas(FigureCanvas):
         self.draw()
 
     def on_click(self, event):
+        if self.datapanel.stackedLayout.currentIndex() == 0:
+            return
 
         min_distance = 3
         if event.xdata != None: 
@@ -66,9 +68,12 @@ class MapCanvas(FigureCanvas):
                 self.axes.add_patch(patch)
                 self.selected_patch = patch
                 self.draw()
-                self.datapanel.on_county_selected(name)
+                self.datapanel.set_panel(3)
+                #TODO: call datapanel.set_county or smn
 
     def on_hover(self, event):
+        if self.datapanel.stackedLayout.currentIndex() == 0:
+            return
 
         start_time = time.process_time()
 

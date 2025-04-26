@@ -3,18 +3,21 @@ from PySide6.QtCore import Slot
 from PySide6.QtGui import QAction, QKeySequence, Qt, QPixmap, QPainter, QStandardItemModel, QStandardItem
 from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QStyleFactory, QSplitter, QGridLayout, QGraphicsGridLayout, QGraphicsProxyWidget, QGraphicsScene, QGraphicsWidget, QGraphicsView, QSizePolicy, QLineEdit, QFormLayout, QTableView, QStackedLayout, QTabWidget, QTableWidgetItem, QTableWidget, QComboBox, QCheckBox, QRadioButton, QTextEdit, QScrollArea, QFileDialog)
 import pandas as pd
-import pickle as pkl
-
-# #with open(''../backend/deep learning/trained_forecaster.pkl', 'wb+') as f:
-#     pickle.dump(forecast_model, f)
+import pickle
+from forecast import Forecaster
 
 
 def LDEBUG(message):
     print(f"[DEBUG]: {message}")
 
-
 df = pd.read_csv("../backend/preprocessing/county_variables.csv")
-#pkl = 
+
+#forecast file
+ff = ''
+
+with open('../backend/deep learning/trained_forecaster.pkl', 'rb') as f:
+    LDEBUG("pickle dump")
+    best_forecaster = pickle.load(f)
 
 county_stations = {
     'Tarrant', 'McLennan', 'Montague', 'Stephens', 'Wise', 'Johnson', 'Comanche', 'Navarro', 'Dallas', 'Denton', 'Cooke',
@@ -111,7 +114,10 @@ class DataPanel(QWidget):
         inputForm.addRow(formTitle)
         inputForm.addRow(dateLabel, dateInput)
         inputForm.addRow(futureDayLabel, futureDayInput)
-        inputForm.addRow(QPushButton('Generate'))
+        generate_button = QPushButton('Generate')
+        generate_button.clicked.connect(lambda x:self.set_panel(2))
+        generate_button.clicked.connect(lambda x:self.generate(dateInput.text(), int(futureDayInput.text())))
+        inputForm.addRow(generate_button)
 
         page1Layout.addLayout(inputForm)
 
@@ -144,6 +150,7 @@ class DataPanel(QWidget):
 
         backButton = QPushButton('Back to Date Select')
         backButton.setMaximumWidth(200)          # Adjust later
+        backButton.clicked.connect(lambda x:self.set_panel(1))
 
         topTab.addWidget(titleLabel2)
         topTab.addWidget(backButton)
@@ -153,17 +160,19 @@ class DataPanel(QWidget):
         # End of Top Tab setup -------------------------
 
         # Setup regional stats
-        model2 = QStandardItemModel()
+        self.model2 = QStandardItemModel()
 
-        model2.setRowCount(5)        # Date, temp, precip, snow, wind
-        model2.setColumnCount(2)     # label, value
+        self.model2.setRowCount(20)        # Date, temp, precip, snow, wind
+        self.model2.setColumnCount(20)     # label, value
 
-        for row in range(5):
-            for column in range(2):
+        for row in range(20):
+            for column in range(20):
                 item = QStandardItem()    # Load data in here for now
-                model2.setItem(row, column, item)
+                self.model2.setItem(row, column, item)
 
-        regionalStats.setModel(model2)        
+        regionalStats.setModel(self.model2)        
+        regionalStats.verticalHeader().hide()
+        regionalStats.horizontalHeader().hide()
 
         page2Layout.addWidget(regionalStats)
 
@@ -194,11 +203,13 @@ class DataPanel(QWidget):
         titleLabel3.setStyleSheet("font-size: 25px; font-weight: bold;")
         titleLabel3.setMinimumWidth(600)        # Adjust later
 
-        backButton2 = QPushButton('Back to County Select')
+        backButton2 = QPushButton('Back to Regional Data')
         backButton2.setMaximumWidth(200)          # Adjust later
+        backButton2.clicked.connect(lambda x:self.set_panel(2))
 
         backButton3 = QPushButton('Back to Date Select')
         backButton3.setMaximumWidth(200)          # Adjust later
+        backButton3.clicked.connect(lambda x:self.set_panel(1))
 
         topTab2.addWidget(titleLabel3)
         topTab2.addWidget(backButton3)
@@ -235,6 +246,51 @@ class DataPanel(QWidget):
         # End of Page 3 creation
         # ------------------------------------------------
 
-        self.stackedLayout.setCurrentIndex(2)
+        self.stackedLayout.setCurrentIndex(0)
         self.setLayout(self.stackedLayout)
 
+    @Slot()
+    def set_panel(self, page):
+        self.stackedLayout.setCurrentIndex(page-1)
+
+    @Slot()
+    def generate(self, date, num_days):
+        #TODO: sanitize input <- notify user if not valid
+        best_forecaster.generate(date, num_days, obs_path='../backend/preprocessing/county_variables.csv', forecast_path='forecast.csv')
+        self.fill_regional_data(num_days)
+        LDEBUG("generated data")
+
+    def fill_regional_data(self, num_days):
+        ff = pd.read_csv("forecast.csv")
+
+        total_temp = 0
+        total_precip = 0
+        total_snow = 0
+        total_wind = 0
+
+        self.model2.setItem(0, 1, QStandardItem("temperature"))
+        self.model2.setItem(0, 2, QStandardItem("precipitation"))
+        self.model2.setItem(0, 3, QStandardItem("snow"))
+        self.model2.setItem(0, 4, QStandardItem("wind speed"))
+        for i in range(num_days):
+            self.model2.setItem(i+1, 0, QStandardItem(f"day {i}"))
+            for region in county_stations:
+                total_temp    += ff.loc[i, region + "_temperature"]
+                total_precip  += ff.loc[i, region + "_precipitation"]
+                total_snow    += ff.loc[i, region + "_snow"]
+                total_wind    += ff.loc[i, region + "_wind_speed"]
+            average_temp   = QStandardItem(f'{(total_temp / 29):.2f}') #TODO: 29 hardcoded, fix
+            average_precip = QStandardItem(f'{(total_precip / 29):.2f}')
+            average_snow   = QStandardItem(f'{(total_snow / 29):.2f}')
+            average_wind   = QStandardItem(f'{(total_wind / 29):.2f}')
+            total_temp = 0
+            total_precip = 0
+            total_snow = 0
+            total_wind = 0
+            self.model2.setItem(i+1, 1, average_temp)
+            self.model2.setItem(i+1, 2, average_precip)
+            self.model2.setItem(i+1, 3, average_snow)
+            self.model2.setItem(i+1, 4, average_wind)
+                
+        #average data
+        #fill table
