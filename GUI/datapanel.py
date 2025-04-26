@@ -71,7 +71,7 @@ class DataPanel(QWidget):
         self.stackedLayout = QStackedLayout()
 
         # ------------------------------------------------
-        # Page 1 creation
+        # Page 1 creationb (Index 0)
         # ------------------------------------------------
 
         # Create all widgets for page 1
@@ -176,7 +176,7 @@ class DataPanel(QWidget):
         # ------------------------------------------------
 
         # ------------------------------------------------
-        # Page 3 creation
+        # Page 3 creation (Index 2)
         # ------------------------------------------------
 
         # Create all widgets for page 3
