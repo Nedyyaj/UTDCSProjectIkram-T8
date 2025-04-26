@@ -26,9 +26,18 @@ def create_dataset(dataset, lookback):
         y.append(target)
     return torch.stack(X, dim=0), torch.stack(y, dim=0)
 
-def train_model(obs_filepath, lookback, hidden_dim, epochs, train_pct):
+def train_model(obs_filepath, lookback, hidden_dim, epochs, train_pct, num_layers):
     data = pd.read_csv(obs_filepath)
-    data.insert(0, 'Day of Year', pd.to_datetime(data['Date']).dt.day_of_year)
+    doy = pd.to_datetime(data['Date']).dt.day_of_year
+    data.insert(0, 'Doy', doy/365.25)
+    data.insert(1, 'DoySin', np.sin(2*np.pi*doy/365.25))
+    data.insert(2, 'DoyCos', np.cos(2*np.pi*doy/365.25))
+
+    # adjust the temperatures and wind speed to be on the same scale as the precip and snow
+    temp_cols = [col for col in data.columns if 'temp' in col]
+    wind_cols = [col for col in data.columns if 'wind' in col]
+    data[temp_cols] = data[temp_cols] / 100.0
+    data[wind_cols] = data[wind_cols] / 100.0
 
     data = torch.from_numpy(data.drop('Date', axis=1).values).float()
     training_len = int(len(data) * train_pct)
@@ -39,7 +48,7 @@ def train_model(obs_filepath, lookback, hidden_dim, epochs, train_pct):
     #print(X_train.shape, y_train.shape)
     #print(X_test.shape, y_test.shape)
 
-    model = Model(len(train[0]), hidden_dim, 1)
+    model = Model(len(train[0]), hidden_dim, num_layers)
     optimizer = optim.Adam(model.parameters())
     loss_fn = nn.MSELoss()
     loader = Data.DataLoader(Data.TensorDataset(X_train, y_train), shuffle=True, batch_size=8)
@@ -72,7 +81,7 @@ def train_model(obs_filepath, lookback, hidden_dim, epochs, train_pct):
         test_rmse = np.sqrt(loss_fn(y_pred, y_test))
     print("Final model: train RMSE %.4f, test RMSE %.4f" % (train_rmse, test_rmse))
 
-    return model
+    return model, train_rmse, test_rmse
 
 def generate_forecast(model, previous_observations, days_forward):
     steps_forward = 4 * days_forward
@@ -90,8 +99,10 @@ def generate_forecast(model, previous_observations, days_forward):
             pred = model(previous)
             pred = pred[-1:,:]
             
-            pred[-1, 0] = day
-            pred[-1, 1] = hour
+            pred[-1, 0] = day / 365.25
+            pred[-1, 1] = np.sin(2*np.pi*day/365.25)
+            pred[-1, 2] = np.cos(2*np.pi*day/365.25)
+            pred[-1, 3] = hour
             if hour == 24:
                 if day == 365:
                     day = 1
@@ -114,7 +125,16 @@ def fetch_previous_observations(obs_filepath, from_date, to_date):
     data.reset_index(inplace=True)
     doy = pd.to_datetime(data['Date']).dt.day_of_year
     data.drop('Date', axis=1, inplace=True)
-    data.insert(0, 'Day of Year', doy)
+    data.insert(0, 'Doy', doy/365.25)
+    data.insert(1, 'DoySin', np.sin(2*np.pi*doy/365.25))
+    data.insert(2, 'DoyCos', np.cos(2*np.pi*doy/365.25))
+
+    # adjust the temperatures and wind speed to be on the same scale as the precip and snow
+    temp_cols = [col for col in data.columns if 'temp' in col]
+    wind_cols = [col for col in data.columns if 'wind' in col]
+    data[temp_cols] = data[temp_cols] / 100.0
+    data[wind_cols] = data[wind_cols] / 100.0
+
     data = torch.from_numpy(data.values).float()
     return data
 
@@ -123,30 +143,44 @@ def save_forecast(forecast_filepath, forecast, days_forecast, obs_filepath, firs
         reader = csv.reader(ff)
         cols = next(reader)
     
-    df = pd.DataFrame(list(forecast), columns=(['Day of Year'] + cols[1:])).round(2)
+    df = pd.DataFrame(list(forecast), columns=(['Doy', 'DoySin', 'DoyCos'] + cols[1:])).round(2)
     df[df < 0] = 0
+
+    # bring the temperature and wind up to where they should be
+    temp_cols = [col for col in df.columns if 'temp' in col]
+    wind_cols = [col for col in df.columns if 'wind' in col]
+    df[temp_cols] = df[temp_cols] * 100.0
+    df[wind_cols] = df[wind_cols] * 100.0
     
     date = pd.to_datetime(first_date)
     dates = []
-    for i in range(30):
+    for i in range(days_forecast):
         dates.extend([date, date, date, date])
         date += pd.Timedelta(days=1)
     
     df.insert(0, 'Date', pd.Series(dates))
+    df.drop(['Doy', 'DoySin', 'DoyCos'], axis=1, inplace=True)
     df.to_csv(forecast_filepath, index=False)
 
 class Forecaster:
-    def __init__(self, observation_filepath, forecast_filepath):
+    def __init__(self, observation_filepath, forecast_filepath, **kwargs):
         self.model = None
         self.obs_filepath = observation_filepath
-        self.days_lookback = 7
-        self.lstm_hidden_dim = 60
-        self.train_pct = 0.6
-        self.epochs_to_train = 20
+        self.days_lookback = 7 if 'lookback' not in kwargs else kwargs['lookback']
+        self.lstm_hidden_dim = 60 if 'hidden_dim' not in kwargs else kwargs['hidden_dim']
+        self.train_pct = 0.6 if 'train_pct' not in kwargs else kwargs['train_pct']
+        self.epochs_to_train = 20 if 'epochs' not in kwargs else kwargs['epochs']
+        self.num_layers = 1 if 'num_layers' not in kwargs else kwargs['num_layers']
         self.forecast_filepath = forecast_filepath
     def train(self):
-        self.model = train_model(self.obs_filepath, 4 * self.days_lookback, self.lstm_hidden_dim, self.epochs_to_train, self.train_pct)
-    def generate(self, from_date, for_days=7):
+        self.model, train_rmse, test_rmse = train_model(self.obs_filepath, 4 * self.days_lookback, self.lstm_hidden_dim, self.epochs_to_train, self.train_pct, self.num_layers)
+        return train_rmse, test_rmse
+    def generate(self, from_date, for_days=7, obs_path=None, forecast_path=None):
+        if obs_path:
+            self.obs_filepath = obs_path
+        if forecast_path:
+            self.forecast_filepath = forecast_path
+
         date = pd.to_datetime(from_date)
         start = date - pd.Timedelta(days=self.days_lookback)
         end = date - pd.Timedelta(days=1)
