@@ -26,7 +26,7 @@ def create_dataset(dataset, lookback):
         y.append(target)
     return torch.stack(X, dim=0), torch.stack(y, dim=0)
 
-def train_model(obs_filepath, lookback, hidden_dim, epochs, train_pct, num_layers):
+def train_model(obs_filepath, lookback, hidden_dim, epochs, train_pct, num_layers, learning_rate):
     data = pd.read_csv(obs_filepath)
     doy = pd.to_datetime(data['Date']).dt.day_of_year
     data.insert(0, 'Doy', doy/365.25)
@@ -49,8 +49,8 @@ def train_model(obs_filepath, lookback, hidden_dim, epochs, train_pct, num_layer
     #print(X_test.shape, y_test.shape)
 
     model = Model(len(train[0]), hidden_dim, num_layers)
-    optimizer = optim.Adam(model.parameters())
-    loss_fn = nn.MSELoss()
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    loss_fn = nn.L1Loss()
     loader = Data.DataLoader(Data.TensorDataset(X_train, y_train), shuffle=True, batch_size=8)
      
     n_epochs = epochs
@@ -172,8 +172,8 @@ class Forecaster:
         self.epochs_to_train = 20 if 'epochs' not in kwargs else kwargs['epochs']
         self.num_layers = 1 if 'num_layers' not in kwargs else kwargs['num_layers']
         self.forecast_filepath = forecast_filepath
-    def train(self):
-        self.model, train_rmse, test_rmse = train_model(self.obs_filepath, 4 * self.days_lookback, self.lstm_hidden_dim, self.epochs_to_train, self.train_pct, self.num_layers)
+    def train(self, learning_rate):
+        self.model, train_rmse, test_rmse = train_model(self.obs_filepath, 4 * self.days_lookback, self.lstm_hidden_dim, self.epochs_to_train, self.train_pct, self.num_layers, learning_rate)
         return train_rmse, test_rmse
     def generate(self, from_date, for_days=7, obs_path=None, forecast_path=None):
         if obs_path:
