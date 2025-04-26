@@ -1,9 +1,12 @@
 import sys
 from PySide6.QtCore import Slot
-from PySide6.QtGui import QAction, QKeySequence, Qt, QPixmap, QPainter
-from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QStyleFactory, QSplitter, QGridLayout, QGraphicsGridLayout, QGraphicsProxyWidget, QGraphicsScene, QGraphicsWidget, QGraphicsView, QSizePolicy)
+from PySide6.QtGui import QAction, QKeySequence, Qt, QPixmap, QPainter, QStandardItemModel, QStandardItem
+from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QStyleFactory, QSplitter, QGridLayout, QGraphicsGridLayout, QGraphicsProxyWidget, QGraphicsScene, QGraphicsWidget, QGraphicsView, QSizePolicy, QLineEdit, QFormLayout, QTableView, QStackedLayout, QTabWidget, QTableWidgetItem, QTableWidget, QComboBox, QCheckBox, QRadioButton, QTextEdit, QScrollArea, QFileDialog)
 import pandas as pd
 import pickle as pkl
+
+# #with open(''../backend/deep learning/trained_forecaster.pkl', 'wb+') as f:
+#     pickle.dump(forecast_model, f)
 
 
 def LDEBUG(message):
@@ -11,6 +14,7 @@ def LDEBUG(message):
 
 
 df = pd.read_csv("../backend/preprocessing/county_variables.csv")
+#pkl = 
 
 county_stations = {
     'Tarrant', 'McLennan', 'Montague', 'Stephens', 'Wise', 'Johnson', 'Comanche', 'Navarro', 'Dallas', 'Denton', 'Cooke',
@@ -63,191 +67,174 @@ class DataPanel(QWidget):
     def __init__(self):
         super(DataPanel, self).__init__()
 
-        self.data = [None] * 30
-        self.data[1]  = CountyData('Tarrant')
-        self.data[2]  = CountyData('McLennan')
-        self.data[3]  = CountyData('Montague')
-        self.data[4]  = CountyData('Stephens')
-        self.data[5]  = CountyData('Wise')
-        self.data[6]  = CountyData('Johnson')
-        self.data[7]  = CountyData('Comanche')
-        self.data[8]  = CountyData('Navarro')
-        self.data[9]  = CountyData('Dallas')
-        self.data[10]  = CountyData('Denton')
-        self.data[11] = CountyData('Cooke')
-        self.data[12] = CountyData('Coryell')
-        self.data[13] = CountyData('Young')
-        self.data[14] = CountyData('Hood')
-        self.data[15] = CountyData('Hunt')
-        self.data[16] = CountyData('Hamilton')
-        self.data[17] = CountyData('Hill')
-        self.data[18] = CountyData('Collin')
-        self.data[19] = CountyData('Palo Pinto')
-        self.data[20] = CountyData('Grayson')
-        self.data[21] = CountyData('Erath')
-        self.data[22] = CountyData('Kaufman')
-        self.data[23] = CountyData('Ellis')
-        self.data[24] = CountyData('Eastland')
-        self.data[25] = CountyData('Jack')
-        self.data[26] = CountyData('Parker')
-        self.data[27] = CountyData('Rockwall')
-        self.data[28] = CountyData('Somervell')
-        self.data[29] = CountyData('Bosque')
+        # Creates the stacked layout for the county data #
+        self.stackedLayout = QStackedLayout()
 
-        self.county = 'None'
-        self.temp = 0.0
-        self.precip = 0.0
-        self.snow = 0.0
-        self.wind= 0.0
+        # ------------------------------------------------
+        # Page 1 creation
+        # ------------------------------------------------
 
-       # Initialize the windows required for the GUI
-        self.main_Window = QWidget(self)
-        main_Window_Grid = QGridLayout()
-        county_Window = QWidget()
-        self.grid = QGridLayout()
+        # Create all widgets for page 1
+        self.page1 = QWidget()
+        page1Layout = QVBoxLayout()
+        titleLabel = QLabel('R.F')
+        defaultTable = QTableView()
+        inputForm = QFormLayout()
+
+        # Title Label Editing
+        titleLabel.setAlignment(Qt.AlignCenter)
+        titleLabel.setMaximumHeight(50)
+        titleLabel.setStyleSheet("font-size: 25px; font-weight: bold;")
+        page1Layout.addWidget(titleLabel)
+
+        # default Table view setup
+        model = QStandardItemModel()
+
+        model.setRowCount(5)        # Date, temp, precip, snow, wind
+        model.setColumnCount(2)     # label, value
+
+        for row in range(5):
+            for column in range(2):
+                item = QStandardItem()    # Load data in here for now
+                model.setItem(row, column, item)
+
+        defaultTable.setModel(model)
+        page1Layout.addWidget(defaultTable)
+
+        # input Form setup
+        formTitle = QLabel('Fill this in to begin forecasting')
+        dateLabel = QLabel('Date (Format: 0000-00-00):')             # We need to input check this!!!!!    
+        futureDayLabel = QLabel('Days into future:')
+        dateInput = QLineEdit()
+        futureDayInput = QLineEdit()
+
+        inputForm.addRow(formTitle)
+        inputForm.addRow(dateLabel, dateInput)
+        inputForm.addRow(futureDayLabel, futureDayInput)
+        inputForm.addRow(QPushButton('Generate'))
+
+        page1Layout.addLayout(inputForm)
+
+        # Add page 1 to stacked layout
+        self.page1.setLayout(page1Layout)
+        self.stackedLayout.addWidget(self.page1)
+
+        # ------------------------------------------------
+        # End of Page 1 creation
+        # ------------------------------------------------        
+
+        # ------------------------------------------------
+        # Page 2 creation (Index 1)
+        # ------------------------------------------------
+
+        # Create all widgets for page 2
+        self.page2 = QWidget()
+        titleLabel2 = QLabel('R.F')
+        page2Layout = QVBoxLayout()
+        topTab = QHBoxLayout()        # Contains title and back button
+        regionalStats = QTableView()
+
+        # Top Tab setup ---------------------------------
+        # We create a specific button which goes to page 1 so it can be reused
+
+        titleLabel2.setAlignment(Qt.AlignCenter)
+        titleLabel2.setMaximumHeight(50)
+        titleLabel2.setStyleSheet("font-size: 25px; font-weight: bold;")
+        titleLabel2.setMinimumWidth(600)        # Adjust later
+
+        backButton = QPushButton('Back to Date Select')
+        backButton.setMaximumWidth(200)          # Adjust later
+
+        topTab.addWidget(titleLabel2)
+        topTab.addWidget(backButton)
+
+        page2Layout.addLayout(topTab)
+
+        # End of Top Tab setup -------------------------
+
+        # Setup regional stats
+        model2 = QStandardItemModel()
+
+        model2.setRowCount(5)        # Date, temp, precip, snow, wind
+        model2.setColumnCount(2)     # label, value
+
+        for row in range(5):
+            for column in range(2):
+                item = QStandardItem()    # Load data in here for now
+                model2.setItem(row, column, item)
+
+        regionalStats.setModel(model2)        
+
+        page2Layout.addWidget(regionalStats)
+
+
+        # Add page 2 to stacked layout
+        self.page2.setLayout(page2Layout)
+        self.stackedLayout.addWidget(self.page2)
+        # ------------------------------------------------
+        # End of Page 2 creation
+        # ------------------------------------------------
+
+        # ------------------------------------------------
+        # Page 3 creation
+        # ------------------------------------------------
+
+        # Create all widgets for page 3
+        self.page3 = QWidget()
+        titleLabel3 = QLabel('R.F')
+        page3Layout = QVBoxLayout()
+        topTab2 = QHBoxLayout()        # Contains title and back button
+        countyStats = QTableView()
+
+        # Top Tab setup ---------------------------------
+        # We create another specific button which goes to page 2
+
+        titleLabel3.setAlignment(Qt.AlignCenter)
+        titleLabel3.setMaximumHeight(50)
+        titleLabel3.setStyleSheet("font-size: 25px; font-weight: bold;")
+        titleLabel3.setMinimumWidth(600)        # Adjust later
+
+        backButton2 = QPushButton('Back to County Select')
+        backButton2.setMaximumWidth(200)          # Adjust later
+
+        backButton3 = QPushButton('Back to Date Select')
+        backButton3.setMaximumWidth(200)          # Adjust later
+
+        topTab2.addWidget(titleLabel3)
+        topTab2.addWidget(backButton3)
+        topTab2.addWidget(backButton2)
         
-        #--------------------------------------------------
-        # Prep the VBOX and Grid Layout for the main window view
-        #--------------------------------------------------
+        page3Layout.addLayout(topTab2)
 
-        # Edit Label
-        label = QLabel("Select a County")
-        label.setAlignment(Qt.AlignCenter)
-        label.setMaximumHeight(30)
-        label.setStyleSheet("font-size: 25px; font-weight: bold;")
-        label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # End of Top Tab setup -------------------------
 
-        # Combining everything into vBox layout so it is stacked vertically
-        main_Window_Grid.addWidget(label)
+        # Setup regional stats
+        model3 = QStandardItemModel()
 
-        self.mainWindow_vBox = QVBoxLayout()
-        self.mainWindow_vBox.addWidget(label)
-        self.mainWindow_vBox.setSpacing(0)
+        # Call a function to get the number of future days so we can add that to the row count
+        numFutureDays = 1 #make function ts
 
-        
-        # Create the grid layout for the county buttons under main_Window_Grid to add to the vbox layout
-        counter = 0
-        column = 0
-        row = 2
-        for county in county_stations:
-            button = QPushButton(county)
-            button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-            button.sizeIncrement()
-            main_Window_Grid.addWidget(button, row, column)
-            row += 1
-            counter += 1
-            if counter == 15:
-                row = 2
-                column += 1
+        model3.setRowCount(5 + numFutureDays + 1)        # Date, temp, precip, snow, wind
+        model3.setColumnCount(2)     # label, value
 
-        # Add grid to the vbox layout
-        self.mainWindow_vBox.addLayout(main_Window_Grid)
+        for row in range(5):
+            for column in range(2):
+                item = QStandardItem()    # Load data in here for now
+                model3.setItem(row, column, item)
 
-        # Creates the grid layout for the county data #
-        #--------------------------------------------------
-        #         Place Holder for real data view
-        #--------------------------------------------------
-        self.county_value   = QLabel(str(self.county), margin=5)
-        self.temp_value     = QLabel(str(self.temp))
-        self.precip_value   = QLabel(str(self.precip))
-        self.snow_value     = QLabel(str(self.snow))
-        self.wind_value     = QLabel(str(self.wind))
+        countyStats.setModel(model3)
 
-        self.county_label   = QLabel('County:')
-        self.temp_label     = QLabel('Temperature:')
-        self.precip_label   = QLabel('Precipitation:')
-        self.snow_label     = QLabel('Snow:')
-        self.wind_label     = QLabel('Wind:')
-
-        self.grid.addWidget(self.county_value,   0, 1, alignment=Qt.AlignCenter)
-        self.grid.addWidget(self.temp_value,     1, 1, alignment=Qt.AlignCenter)
-        self.grid.addWidget(self.precip_value,   2, 1, alignment=Qt.AlignCenter)
-        self.grid.addWidget(self.snow_value,     3, 1, alignment=Qt.AlignCenter)
-        self.grid.addWidget(self.wind_value,     4, 1, alignment=Qt.AlignCenter)
-
-        self.grid.addWidget(self.county_label,   0, 0, alignment=Qt.AlignCenter)
-        self.grid.addWidget(self.temp_label,     1, 0, alignment=Qt.AlignCenter)
-        self.grid.addWidget(self.precip_label,   2, 0, alignment=Qt.AlignCenter)
-        self.grid.addWidget(self.snow_label,     3, 0, alignment=Qt.AlignCenter)
-        self.grid.addWidget(self.wind_label,     4, 0, alignment=Qt.AlignCenter)
-        
-        #--------------------------------------------------
-        #      End of Place Holder for real data view
-        #--------------------------------------------------
-
-        #Adds the grid layout to the vbox layout
-        self.main_Window = self.mainWindow_vBox
-        self.hide_data()
-        self.setLayout(self.main_Window)
-        #self.setLayout(county_Window)  
-        
-
-        #when the button is clicked, call the on_click method
-        for i in range(1, 30):
-            button = main_Window_Grid.itemAt(i).widget()
-            name = button.clicked.connect(lambda _, b = button: self.on_click(b))
-            
+        page3Layout.addWidget(countyStats)
 
 
-    def on_county_selected(self, county):
-        self.county_value.setText   (str(self.data[county_dict[county]].name))
-        self.temp_value.setText     (str(self.data[county_dict[county]].temp))
-        self.precip_value.setText   (str(self.data[county_dict[county]].precip))
-        self.snow_value.setText     (str(self.data[county_dict[county]].snow))
-        self.wind_value.setText     (str(self.data[county_dict[county]].wind))
+        # Add page 3 to stacked layout
+        self.page3.setLayout(page3Layout)
+        self.stackedLayout.addWidget(self.page3)
 
+        # ------------------------------------------------
+        # End of Page 3 creation
+        # ------------------------------------------------
 
-        #self.main_Window.addLayout(self.grid)
+        self.stackedLayout.setCurrentIndex(2)
+        self.setLayout(self.stackedLayout)
 
-    #--------------------------------#
-    # DEFINES THE USE OF THE BUTTONS
-    #--------------------------------#
-    def on_click(self, button):
-
-        # Get the name of the button that was clicked
-        name = button.text()
-        LDEBUG(f"Button clicked: {name}")
-
-        self.county_value.setText   (str(self.data[county_dict[name]].name))
-        self.temp_value.setText     (str(self.data[county_dict[name]].temp))
-        self.precip_value.setText   (str(self.data[county_dict[name]].precip))
-        self.snow_value.setText     (str(self.data[county_dict[name]].snow))
-        self.wind_value.setText     (str(self.data[county_dict[name]].wind))
-
-        
-        LDEBUG(f"County is: {self.county_value.text()}")
-        LDEBUG(f"Temperature is: {self.temp_value.text()}")
-        LDEBUG(f"Precipitation is: {self.precip_value.text()}")
-        LDEBUG(f"Snow is: {self.snow_value.text()}")
-        LDEBUG(f"Wind is: {self.wind_value.text()}")
-
-        self.show_data()
-        self.hide_buttons()
-
-    #--------------------------------#
-    # Defines the viewing and hiding of the data grid
-    #--------------------------------#
-    def show_data(self):
-        self.main_Window.addLayout(self.grid)
-        LDEBUG("Data grid shown")
-
-    def hide_data(self):
-        self.main_Window.removeItem(self.grid)
-        LDEBUG("Data grid hidden")
-    #--------------------------------#
-    # End of the button click method
-    #--------------------------------#
-
-    #--------------------------------#
-    # Defines the viewing and hiding of the vBoxButton grid
-    #--------------------------------#
-    def show_buttons(self):
-        self.main_Window.addLayout(self.mainWindow_vBox)
-        LDEBUG("Button grid shown")
-
-    def hide_buttons(self):
-        self.main_Window.removeItem(self.main_Window)
-        LDEBUG("Button grid hidden")
-    #--------------------------------#
-    # End of the button click method
-    #--------------------------------#
