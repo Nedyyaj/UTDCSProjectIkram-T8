@@ -34,12 +34,14 @@ def train_model(obs_filepath, lookback, hidden_dim, epochs, train_pct, num_layer
     data.insert(2, 'DoyCos', np.cos(2*np.pi*doy/365.25))
 
     # adjust the temperatures and wind speed to be on the same scale as the precip and snow
-    temp_cols = [col for col in data.columns if 'temp' in col]
-    wind_cols = [col for col in data.columns if 'wind' in col]
-    data[temp_cols] = data[temp_cols] / 100.0
-    data[wind_cols] = data[wind_cols] / 100.0
-
-    data = torch.from_numpy(data.drop('Date', axis=1).values).float()
+    precip_cols = [col for col in data.columns if 'precip' in col]
+    snow_cols = [col for col in data.columns if 'snow' in col]
+    data[precip_cols] = data[precip_cols] * 100.0
+    data[snow_cols] = data[snow_cols] * 100.0
+    
+    data = data.drop('Date', axis=1)
+    
+    data = torch.from_numpy(data.values).float()
     training_len = int(len(data) * train_pct)
     train, test = data[:training_len], data[training_len:]
     
@@ -50,7 +52,7 @@ def train_model(obs_filepath, lookback, hidden_dim, epochs, train_pct, num_layer
 
     model = Model(len(train[0]), hidden_dim, num_layers)
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    loss_fn = nn.L1Loss()
+    loss_fn = nn.MSELoss()
     loader = Data.DataLoader(Data.TensorDataset(X_train, y_train), shuffle=True, batch_size=8)
      
     n_epochs = epochs
@@ -94,15 +96,18 @@ def generate_forecast(model, previous_observations, days_forward):
         day += 1
     hour = 6
     forecast = []
+    last_observation =  previous_observations[-1:, :]
     with torch.no_grad():
         for i in range(steps_forward):
             pred = model(previous)
             pred = pred[-1:,:]
-            
-            pred[-1, 0] = day / 365.25
+
+            d = day# - 183
+            h = hour# - 15
+            pred[-1, 0] = d / 365.25
             pred[-1, 1] = np.sin(2*np.pi*day/365.25)
             pred[-1, 2] = np.cos(2*np.pi*day/365.25)
-            pred[-1, 3] = hour
+            pred[-1, 3] = h
             if hour == 24:
                 if day == 365:
                     day = 1
@@ -112,8 +117,23 @@ def generate_forecast(model, previous_observations, days_forward):
             else:
                 hour += 6
 
-            forecast.append(pred[-1, :])
-            previous = torch.cat((previous[1:, :], pred), dim=0)
+            diff = pred - last_observation
+            clamped = torch.clamp(diff, min=-10, max=20)
+            #print(diff)
+            #print(clamped)
+            new_pred = last_observation + clamped
+            
+            new_pred[-1, 0] = d / 365.25
+            new_pred[-1, 1] = np.sin(2*np.pi*(d)/365.25)
+            new_pred[-1, 2] = np.cos(2*np.pi*(d)/365.25)
+            new_pred[-1, 3] = h
+
+            #print(new_pred)
+
+            last_observation = new_pred.clone()
+            
+            forecast.append(new_pred[-1, :])
+            previous = torch.cat((previous[1:, :], new_pred), dim=0)
     
     return torch.stack(forecast, dim=0).numpy()
 
@@ -129,11 +149,11 @@ def fetch_previous_observations(obs_filepath, from_date, to_date):
     data.insert(1, 'DoySin', np.sin(2*np.pi*doy/365.25))
     data.insert(2, 'DoyCos', np.cos(2*np.pi*doy/365.25))
 
-    # adjust the temperatures and wind speed to be on the same scale as the precip and snow
-    temp_cols = [col for col in data.columns if 'temp' in col]
-    wind_cols = [col for col in data.columns if 'wind' in col]
-    data[temp_cols] = data[temp_cols] / 100.0
-    data[wind_cols] = data[wind_cols] / 100.0
+    # adjust the precipitation and snow to be on the same scale as the temps and wind
+    precip_cols = [col for col in data.columns if 'precip' in col]
+    snow_cols = [col for col in data.columns if 'snow' in col]
+    data[precip_cols] = data[precip_cols] * 100.0
+    data[snow_cols] = data[snow_cols] * 100.0
 
     data = torch.from_numpy(data.values).float()
     return data
@@ -146,11 +166,11 @@ def save_forecast(forecast_filepath, forecast, days_forecast, obs_filepath, firs
     df = pd.DataFrame(list(forecast), columns=(['Doy', 'DoySin', 'DoyCos'] + cols[1:])).round(2)
     df[df < 0] = 0
 
-    # bring the temperature and wind up to where they should be
-    temp_cols = [col for col in df.columns if 'temp' in col]
-    wind_cols = [col for col in df.columns if 'wind' in col]
-    df[temp_cols] = df[temp_cols] * 100.0
-    df[wind_cols] = df[wind_cols] * 100.0
+    # bring the precip and snow down to where they should be
+    precip_cols = [col for col in df.columns if 'precip' in col]
+    snow_cols = [col for col in df.columns if 'snow' in col]
+    df[precip_cols] = df[precip_cols] / 100.0
+    df[snow_cols] = df[snow_cols] / 100.0
     
     date = pd.to_datetime(first_date)
     dates = []
