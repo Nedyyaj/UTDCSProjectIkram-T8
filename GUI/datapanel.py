@@ -108,8 +108,8 @@ class DataPanel(QWidget):
 
         # input Form setup
         formTitle = QLabel('Fill this in to begin forecasting')
-        dateLabel = QLabel('Date (Format: 0000-00-00):')             # We need to input check this!!!!!    
-        futureDayLabel = QLabel('Days into future:')
+        dateLabel = QLabel('Date (Format: 0000-00-00) (Nothing past 2025-03-01):')             # We need to input check this!!!!!    
+        futureDayLabel = QLabel('Days into future (Limit: 5):')
         dateInput = QLineEdit()
         self.futureDayInput = QLineEdit()
 
@@ -118,7 +118,7 @@ class DataPanel(QWidget):
         inputForm.addRow(futureDayLabel, self.futureDayInput)
         generate_button = QPushButton('Generate')
         generate_button.clicked.connect(lambda x:self.set_panel(2))
-        generate_button.clicked.connect(lambda x:self.generate(dateInput.text(), int(self.futureDayInput.text())))
+        generate_button.clicked.connect(lambda x:self.generate(dateInput.text()))
         inputForm.addRow(generate_button)
 
         page1Layout.addLayout(inputForm)
@@ -258,25 +258,29 @@ class DataPanel(QWidget):
         self.stackedLayout.setCurrentIndex(page-1)
 
     @Slot()
-    def generate(self, date, num_days):
+    def generate(self, date):
         #TODO: sanitize input <- notify user if not valid
         good = True
         if len(date) != 10:
             good = False
-        year =  date[0:4]    #year
-        month = date[5:7]    #month
-        day =   date[8:10]   #day
-        LDEBUG(f"year: {year}, month: {month}, day: {day}")
+        else:
+            if chr(self.futureDayInput.text()) not in '0123456789' or int(self.futureDayInput.text()) < 1 or int(self.futureDayInput.text()) > 5:
+                good = False
 
-        for char in year:
-            if char not in '0123456789':
-                good = False
-        for char in month:
-            if char not in '0123456789':
-                good = False
-        for char in day:
-            if char not in '0123456789':
-                good = False
+            year =  date[0:4]    #year
+            month = date[5:7]    #month
+            day =   date[8:10]   #day
+            LDEBUG(f"year: {year}, month: {month}, day: {day}")
+
+            for char in year:
+                if char not in '0123456789':
+                    good = False
+            for char in month:
+                if char not in '0123456789':
+                    good = False
+            for char in day:
+                if char not in '0123456789':
+                    good = False
 
         if good == False:
             LDEBUG("wrong input")
