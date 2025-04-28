@@ -1,7 +1,9 @@
 import sys
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QAction, QKeySequence, Qt, QPixmap, QPainter, QStandardItemModel, QStandardItem
-from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QStyleFactory, QSplitter, QGridLayout, QGraphicsGridLayout, QGraphicsProxyWidget, QGraphicsScene, QGraphicsWidget, QGraphicsView, QSizePolicy, QLineEdit, QFormLayout, QTableView, QStackedLayout, QTabWidget, QTableWidgetItem, QTableWidget, QComboBox, QCheckBox, QRadioButton, QTextEdit, QScrollArea, QFileDialog)
+from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QStyleFactory, QSplitter, QGridLayout,
+ QGraphicsGridLayout, QGraphicsProxyWidget, QGraphicsScene, QGraphicsWidget, QGraphicsView, QSizePolicy, QLineEdit, QFormLayout, QTableView, QStackedLayout, QTabWidget, 
+ QTableWidgetItem, QTableWidget, QComboBox, QCheckBox, QRadioButton, QTextEdit, QScrollArea, QFileDialog, QMessageBox, QDialog, QDialogButtonBox, QStyleOption, QStyle, QTableWidgetItem, QHeaderView)
 import pandas as pd
 import pickle
 from forecast import Forecaster
@@ -258,35 +260,35 @@ class DataPanel(QWidget):
     @Slot()
     def generate(self, date, num_days):
         #TODO: sanitize input <- notify user if not valid
-        # good = True
-        # year = date[0:4]    #year
-        # month = date[5:7]    #month
-        # day = date[8:10]   #day
-        # LDEBUG(f"year: {year}, month: {month}, day: {day}")
+        good = True
+        if len(date) != 10:
+            good = False
+        year =  date[0:4]    #year
+        month = date[5:7]    #month
+        day =   date[8:10]   #day
+        LDEBUG(f"year: {year}, month: {month}, day: {day}")
 
-        # for char in year:
-        #     if char not in '0123456789':
-        #         good = False
-        # for char in month:
-        #     if char not in '0123456789':
-        #         good = False
-        # for char in day:
-        #     if char not in '0123456789':
-        #         good = False
+        for char in year:
+            if char not in '0123456789':
+                good = False
+        for char in month:
+            if char not in '0123456789':
+                good = False
+        for char in day:
+            if char not in '0123456789':
+                good = False
 
-        # if good == False:
-        #     LDEBUG("wrong input")
-        #     self.wrong_input_error()
-        # else:
-        #     actual_date = f"{year}-{month}-{day}"   
-        #     best_forecaster.generate(date, num_days, obs_path='../backend/preprocessing/county_variables.csv', forecast_path='forecast.csv')
-        #     self.fill_regional_data(num_days)
-        #     LDEBUG("generated data")
+        if good == False:
+            LDEBUG("wrong input")
+            self.set_panel(1)
+            self.wrong_input_error()
+            
+        else:
+            actual_date = f"{year}-{month}-{day}"   
+            best_forecaster.generate(date, num_days, obs_path='../backend/preprocessing/county_variables.csv', forecast_path='forecast.csv')
+            self.fill_regional_data(num_days)
+            LDEBUG("generated data")
 
-        # actual_date = f"{year}-{month}-{day}"   
-        best_forecaster.generate(date, num_days, obs_path='../backend/preprocessing/county_variables.csv', forecast_path='forecast.csv')
-        self.fill_regional_data(num_days)
-        LDEBUG("generated data")
 
     def fill_regional_data(self, num_days):
 
@@ -306,7 +308,7 @@ class DataPanel(QWidget):
 
         # Iterates through and adds the totals up before averaging them and plugging them into the table iterating through how many days into future desired
         for i in range(num_days):
-            self.model2.setItem(i+1, 0, QStandardItem(f"Day {i} : {ff.loc[i, 'Date']}"))
+            self.model2.setItem(i+1, 0, QStandardItem(f"Day {i}: {ff.loc[i, 'Date']}"))
 
             # Does one row of the table at a time
             for region in county_stations:
@@ -338,7 +340,7 @@ class DataPanel(QWidget):
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Icon.Warning)
         msg.setText("Invalid Input")
-        msg.setWindowTItle("Error")
+        msg.setWindowTitle("Error")
         msg.setStandardButtons(QMessageBox.StandardButton.Ok)
         msg.exec()
 
