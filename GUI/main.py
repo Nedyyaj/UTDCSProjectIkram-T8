@@ -115,7 +115,7 @@ class MainWindow(QMainWindow):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setStyle(QStyleFactory.create('Cleanlooks'))
-    app.setWindowIcon(QIcon("images/4CASTX.png"))          # This isn't working, need to fix it later
+    app.setWindowIcon(QIcon("images/4CASTX Logo.png"))          # This isn't working, need to fix it later
     panel = DataPanel()
     canvas = MapCanvas(panel)
     map = Map(canvas)
