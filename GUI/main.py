@@ -42,23 +42,80 @@ class Splitter(QWidget):
         splitter.setChildrenCollapsible(False)
 
 
+# --------------------------------------------------------------
+# Color Palette for application
+# --------------------------------------------------------------
+# Primary Color: #3674B5
+# Secondary Color: #578FCA
+# Tertiary Color: #A1E3F9
+# Background Color: #D1F8EF
+
+# Extra Dark Colors
+# Darker Blue: #003092
+
+# Notes: 
+# Black #000000
+# White #FFFFFF
+# --------------------------------------------------------------
+
+
 class MainWindow(QMainWindow):
     def __init__(self, splitter):
         QMainWindow.__init__(self)
         self.setWindowTitle("4CASTX")
-        #self.setWindowIcon(QIcon("images/4CASTX.png"))
+        
         self.setCentralWidget(splitter)
         
-        # self.back_click = QAction("Back", self)
-        # self.back_click.setShortcut('Q')
+        # Color
+        self.setStyleSheet("""
+            QMainWindow {
+                background-color: #578FCA;  /* Background color */
+                color: #000000;  /* Text color */
+            }
+            QWidget {
+                background-color: #3674B5;  /* Background color */
+                color: #000000;  /* Text color */
+            }
+            QSplitter{
+                background-color: #578FCA;  /* Background color */
+            }
 
-        # self.toolbar = self.addToolBar("Back")
-        # self.toolbar.addAction(self.back_click)
+            QMainWindow {
+                background-color: #3674B5;  /* Background color */
+                color: #000000;  /* Text color */
+            }
+            
+            QLabel {
+                background-color: #578FCA;  /* Label background color */
+                color: #000000;  /* Label text color */
+            }
+
+            QPushButton {
+                background-color: #578FCA;  /* Button color */
+                color: #FFFFFF;  /* Button text color */
+                border: 1px solid #000000;  /* Table border color */
+            }
+            QPushButton:hover {
+                background-color: #A1E3F9;  /* Button hover color */ }
+                color: #000000;  /* Button text color */
+                border: 1px solid #000000;  /* Table border color */
+            
+            QTableView {
+                background-color: #A1E3F9;  /* Table background color */
+                color: #000000;  /* Table text color */
+            }
+            QTableView::item {
+                background-color: #A1E3F9;  /* Table item background color */
+                color: #000000;  /* Table item text color */
+            }
+
+
+        """)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setStyle(QStyleFactory.create('Cleanlooks'))
-
+    app.setWindowIcon(QIcon("images/4CASTX.png"))          # This isn't working, need to fix it later
     panel = DataPanel()
     canvas = MapCanvas(panel)
     map = Map(canvas)

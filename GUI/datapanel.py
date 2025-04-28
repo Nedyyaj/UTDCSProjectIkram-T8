@@ -1,9 +1,10 @@
 import sys
 from PySide6.QtCore import Slot
-from PySide6.QtGui import QAction, QKeySequence, Qt, QPixmap, QPainter, QStandardItemModel, QStandardItem
+from PySide6.QtGui import QAction, QKeySequence, Qt, QPixmap, QPainter, QStandardItemModel, QStandardItem, QPalette, QColor
 from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QStyleFactory, QSplitter, QGridLayout,
  QGraphicsGridLayout, QGraphicsProxyWidget, QGraphicsScene, QGraphicsWidget, QGraphicsView, QSizePolicy, QLineEdit, QFormLayout, QTableView, QStackedLayout, QTabWidget, 
- QTableWidgetItem, QTableWidget, QComboBox, QCheckBox, QRadioButton, QTextEdit, QScrollArea, QFileDialog, QMessageBox, QDialog, QDialogButtonBox, QStyleOption, QStyle, QTableWidgetItem, QHeaderView)
+ QTableWidgetItem, QTableWidget, QComboBox, QCheckBox, QRadioButton, QTextEdit, QScrollArea, QFileDialog, QMessageBox, QDialog, QDialogButtonBox, QStyleOption, 
+ QStyle, QTableWidgetItem, QHeaderView, QStyledItemDelegate)
 import pandas as pd
 import pickle
 from forecast import Forecaster
@@ -13,7 +14,6 @@ def LDEBUG(message):
     print(f"[DEBUG]: {message}")
 
 df = pd.read_csv("../backend/preprocessing/county_variables.csv")
-
 #forecast file
 ff = ''
 
@@ -60,6 +60,7 @@ county_dict = {
 }
 
 
+
 class CountyData():
     def __init__(self, name):
         self.name = name
@@ -71,8 +72,11 @@ class CountyData():
 class DataPanel(QWidget):
     def __init__(self):
         super(DataPanel, self).__init__()
+        palette = QPalette()
+        palette.setColor(QPalette.ColorRole.Window, QColor(54, 116, 181))  # Background color
 
         # Creates the stacked layout for the county data #
+        delegate = ReadOnlyDelegate(self)
         self.stackedLayout = QStackedLayout()
 
         # ------------------------------------------------
@@ -82,7 +86,7 @@ class DataPanel(QWidget):
         # Create all widgets for page 1
         self.page1 = QWidget()
         page1Layout = QVBoxLayout()
-        titleLabel = QLabel('R.F')
+        titleLabel = QLabel('4CASTX Weather Forecasting')
         defaultTable = QTableView()
         inputForm = QFormLayout()
 
@@ -103,6 +107,8 @@ class DataPanel(QWidget):
                 item = QStandardItem()    # Load data in here for now
                 model.setItem(row, column, item)
 
+        defaultTable.setItemDelegate(delegate)
+
         defaultTable.setModel(model)
         page1Layout.addWidget(defaultTable)
 
@@ -110,15 +116,15 @@ class DataPanel(QWidget):
         formTitle = QLabel('Fill this in to begin forecasting')
         dateLabel = QLabel('Date (Format: 0000-00-00) (Nothing past 2025-03-01):')             # We need to input check this!!!!!    
         futureDayLabel = QLabel('Days into future (Limit: 5):')
-        dateInput = QLineEdit()
+        self.dateInput = QLineEdit()
         self.futureDayInput = QLineEdit()
 
         inputForm.addRow(formTitle)
-        inputForm.addRow(dateLabel, dateInput)
+        inputForm.addRow(dateLabel, self.dateInput)
         inputForm.addRow(futureDayLabel, self.futureDayInput)
         generate_button = QPushButton('Generate')
         generate_button.clicked.connect(lambda x:self.set_panel(2))
-        generate_button.clicked.connect(lambda x:self.generate(dateInput.text()))
+        generate_button.clicked.connect(lambda x:self.generate(self.dateInput.text()))
         inputForm.addRow(generate_button)
 
         page1Layout.addLayout(inputForm)
@@ -137,7 +143,7 @@ class DataPanel(QWidget):
 
         # Create all widgets for page 2
         self.page2 = QWidget()
-        titleLabel2 = QLabel('R.F')
+        titleLabel2 = QLabel(f"Regional Forecast for {self.dateInput.text()}")
         page2Layout = QVBoxLayout()
         topTab = QHBoxLayout()        # Contains title and back button
         regionalStats = QTableView()
@@ -164,17 +170,18 @@ class DataPanel(QWidget):
         # Setup regional stats
         self.model2 = QStandardItemModel()
 
-        self.model2.setRowCount(20)        # Date, temp, precip, snow, wind
-        self.model2.setColumnCount(20)     # label, value
+        self.model2.setRowCount(6)        # Date, temp, precip, snow, wind
+        self.model2.setColumnCount(6)     # label, value
 
-        for row in range(20):
-            for column in range(20):
+        for row in range(6):
+            for column in range(6):
                 item = QStandardItem()    # Load data in here for now
                 self.model2.setItem(row, column, item)
 
         regionalStats.setModel(self.model2)        
         regionalStats.verticalHeader().hide()
         regionalStats.horizontalHeader().hide()
+        regionalStats.setItemDelegate(delegate)
 
         page2Layout.addWidget(regionalStats)
 
@@ -192,7 +199,7 @@ class DataPanel(QWidget):
 
         # Create all widgets for page 3
         self.page3 = QWidget()
-        titleLabel3 = QLabel('R.F')
+        self.titleLabel3 = QLabel('R.F')
         page3Layout = QVBoxLayout()
         topTab2 = QHBoxLayout()        # Contains title and back button
         countyStats = QTableView()
@@ -200,10 +207,10 @@ class DataPanel(QWidget):
         # Top Tab setup ---------------------------------
         # We create another specific button which goes to page 2
 
-        titleLabel3.setAlignment(Qt.AlignCenter)
-        titleLabel3.setMaximumHeight(50)
-        titleLabel3.setStyleSheet("font-size: 25px; font-weight: bold;")
-        titleLabel3.setMinimumWidth(600)        # Adjust later
+        self.titleLabel3.setAlignment(Qt.AlignCenter)
+        self.titleLabel3.setMaximumHeight(50)
+        self.titleLabel3.setStyleSheet("font-size: 25px; font-weight: bold;")
+        self.titleLabel3.setMinimumWidth(600)        # Adjust later
 
         backButton2 = QPushButton('Back to Regional Data')
         backButton2.setMaximumWidth(200)          # Adjust later
@@ -213,7 +220,7 @@ class DataPanel(QWidget):
         backButton3.setMaximumWidth(200)          # Adjust later
         backButton3.clicked.connect(lambda x:self.set_panel(1))
 
-        topTab2.addWidget(titleLabel3)
+        topTab2.addWidget(self.titleLabel3)
         topTab2.addWidget(backButton3)
         topTab2.addWidget(backButton2)
         
@@ -238,6 +245,7 @@ class DataPanel(QWidget):
         countyStats.setModel(self.model3)
         countyStats.verticalHeader().hide()
         countyStats.horizontalHeader().hide()
+        countyStats.setItemDelegate(delegate)
 
         page3Layout.addWidget(countyStats)
 
@@ -264,7 +272,10 @@ class DataPanel(QWidget):
         if len(date) != 10:
             good = False
         else:
-            if chr(self.futureDayInput.text()) not in '0123456789' or int(self.futureDayInput.text()) < 1 or int(self.futureDayInput.text()) > 5:
+            for char in self.futureDayInput.text():
+                if char not in '0123456789':
+                    good = False
+            if int(self.futureDayInput.text()) < 1 or int(self.futureDayInput.text()) > 5:
                 good = False
 
             year =  date[0:4]    #year
@@ -289,8 +300,8 @@ class DataPanel(QWidget):
             
         else:
             actual_date = f"{year}-{month}-{day}"   
-            best_forecaster.generate(date, num_days, obs_path='../backend/preprocessing/county_variables.csv', forecast_path='forecast.csv')
-            self.fill_regional_data(num_days)
+            best_forecaster.generate(date, int(self.futureDayInput.text()), obs_path='../backend/preprocessing/county_variables.csv', forecast_path='forecast.csv')
+            self.fill_regional_data(int(self.futureDayInput.text()))
             LDEBUG("generated data")
 
 
@@ -350,6 +361,7 @@ class DataPanel(QWidget):
 
     def fill_county_data(self, county):
 
+        self.titleLabel3.setText(f"County Forecast for {county}")
         # Reads the forcast file
         ff = pd.read_csv("forecast.csv")
 
@@ -394,4 +406,14 @@ class DataPanel(QWidget):
             self.model3.setItem(i+1, 3, county_average_snow)
             self.model3.setItem(i+1, 4, county_average_wind)
 
+    
+class ReadOnlyDelegate(QStyledItemDelegate):
+    def createEditor(self, parent, option, index):
+        return None
+
+    def setEditorData(self, editor, index):
+        pass
+
+    def setModelData(self, editor, model, index):
+        pass
 
