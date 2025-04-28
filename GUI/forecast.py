@@ -11,11 +11,9 @@ class Model(nn.Module):
     def __init__(self, io_size, hidden_size, num_layers):
         super().__init__()
         self.lstm = nn.LSTM(input_size=io_size, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
-        self.dropout = nn.Dropout(p=0.2)
         self.linear = nn.Linear(hidden_size, io_size)
     def forward(self, x):
         x, _ = self.lstm(x)
-        x = self.dropout(x)
         x = self.linear(x)
         return x
 
@@ -42,7 +40,6 @@ def train_model(obs_filepath, lookback, hidden_dim, epochs, train_pct, num_layer
     data[snow_cols] = data[snow_cols] * 100.0
     
     data = data.drop('Date', axis=1)
-    #data = data - data.mean()
     
     data = torch.from_numpy(data.values).float()
     training_len = int(len(data) * train_pct)
@@ -97,7 +94,7 @@ def generate_forecast(model, previous_observations, days_forward):
         day = 1
     else:
         day += 1
-    hour = 6 
+    hour = 6
     forecast = []
     last_observation =  previous_observations[-1:, :]
     with torch.no_grad():
@@ -120,9 +117,6 @@ def generate_forecast(model, previous_observations, days_forward):
             else:
                 hour += 6
 
-            # avoid drastic changes
-            #print(last_observation)
-            
             diff = pred - last_observation
             clamped = torch.clamp(diff, min=-10, max=20)
             #print(diff)
@@ -144,23 +138,16 @@ def generate_forecast(model, previous_observations, days_forward):
     return torch.stack(forecast, dim=0).numpy()
 
 def fetch_previous_observations(obs_filepath, from_date, to_date):
-    data_original = pd.read_csv(obs_filepath)
-    doy = pd.to_datetime(data_original['Date']).dt.day_of_year
-    data_original.insert(0, 'Doy', doy/365.25)
-    data_original.insert(1, 'DoySin', np.sin(2*np.pi*doy/365.25))
-    data_original.insert(2, 'DoyCos', np.cos(2*np.pi*doy/365.25))
-    
-    data = data_original.copy()
+    data = pd.read_csv(obs_filepath)
     data['Date'] = pd.to_datetime(data['Date'])
     data.set_index(['Date', 'Hour'], inplace=True)
     data = data.loc[(from_date, 6):(to_date, 24)]
     data.reset_index(inplace=True)
+    doy = pd.to_datetime(data['Date']).dt.day_of_year
     data.drop('Date', axis=1, inplace=True)
-    # doy = pd.to_datetime(data['Date']).dt.day_of_year
-    # data.drop('Date', axis=1, inplace=True)
-    # data.insert(0, 'Doy', doy/365.25)
-    # data.insert(1, 'DoySin', np.sin(2*np.pi*doy/365.25))
-    # data.insert(2, 'DoyCos', np.cos(2*np.pi*doy/365.25))
+    data.insert(0, 'Doy', doy/365.25)
+    data.insert(1, 'DoySin', np.sin(2*np.pi*doy/365.25))
+    data.insert(2, 'DoyCos', np.cos(2*np.pi*doy/365.25))
 
     # adjust the precipitation and snow to be on the same scale as the temps and wind
     precip_cols = [col for col in data.columns if 'precip' in col]
@@ -168,8 +155,6 @@ def fetch_previous_observations(obs_filepath, from_date, to_date):
     data[precip_cols] = data[precip_cols] * 100.0
     data[snow_cols] = data[snow_cols] * 100.0
 
-    #data = data - data_original.drop('Date', axis=1).mean()
-    
     data = torch.from_numpy(data.values).float()
     return data
 
@@ -177,15 +162,8 @@ def save_forecast(forecast_filepath, forecast, days_forecast, obs_filepath, firs
     with open(obs_filepath) as ff:
         reader = csv.reader(ff)
         cols = next(reader)
-
-    data = pd.read_csv(obs_filepath)
     
     df = pd.DataFrame(list(forecast), columns=(['Doy', 'DoySin', 'DoyCos'] + cols[1:])).round(2)
-    df.drop(['Doy', 'DoySin', 'DoyCos'], axis=1, inplace=True)
-
-    #means = data.drop('Date', axis=1).mean()
-    #means['Hour'] = 15
-    #df = df + means
     df[df < 0] = 0
 
     # bring the precip and snow down to where they should be
@@ -193,11 +171,6 @@ def save_forecast(forecast_filepath, forecast, days_forecast, obs_filepath, firs
     snow_cols = [col for col in df.columns if 'snow' in col]
     df[precip_cols] = df[precip_cols] / 100.0
     df[snow_cols] = df[snow_cols] / 100.0
-
-    # raise the temperature predictions by roughly 1 degree per 6 hours, to combat systematic underestimations
-    # temp_cols = [col for col in df.columns if 'temp' in col]
-    # for col in temp_cols:
-    #     df[col] = df[col] + df.index
     
     date = pd.to_datetime(first_date)
     dates = []
@@ -206,6 +179,7 @@ def save_forecast(forecast_filepath, forecast, days_forecast, obs_filepath, firs
         date += pd.Timedelta(days=1)
     
     df.insert(0, 'Date', pd.Series(dates))
+    df.drop(['Doy', 'DoySin', 'DoyCos'], axis=1, inplace=True)
     df.to_csv(forecast_filepath, index=False)
 
 class Forecaster:
