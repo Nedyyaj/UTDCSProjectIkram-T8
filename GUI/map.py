@@ -69,6 +69,7 @@ class MapCanvas(FigureCanvas):
                 self.selected_patch = patch
                 self.draw()
                 self.datapanel.set_panel(3)
+                self.datapanel.fill_county_data(name)
                 #TODO: call datapanel.set_county or smn
 
     def on_hover(self, event):

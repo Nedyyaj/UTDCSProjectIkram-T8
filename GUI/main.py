@@ -1,6 +1,6 @@
 import sys
 from PySide6.QtCore import Slot
-from PySide6.QtGui import QAction, QKeySequence, Qt, QPixmap
+from PySide6.QtGui import QAction, QKeySequence, Qt, QPixmap, QIcon
 from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QStyleFactory, QSplitter, QGridLayout)
 from map import Map, MapCanvas
 from datapanel import DataPanel
@@ -46,6 +46,7 @@ class MainWindow(QMainWindow):
     def __init__(self, splitter):
         QMainWindow.__init__(self)
         self.setWindowTitle("4CASTX")
+        #self.setWindowIcon(QIcon("images/4CASTX.png"))
         self.setCentralWidget(splitter)
         
         # self.back_click = QAction("Back", self)

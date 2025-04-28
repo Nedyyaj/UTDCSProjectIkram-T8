@@ -109,14 +109,14 @@ class DataPanel(QWidget):
         dateLabel = QLabel('Date (Format: 0000-00-00):')             # We need to input check this!!!!!    
         futureDayLabel = QLabel('Days into future:')
         dateInput = QLineEdit()
-        futureDayInput = QLineEdit()
+        self.futureDayInput = QLineEdit()
 
         inputForm.addRow(formTitle)
         inputForm.addRow(dateLabel, dateInput)
-        inputForm.addRow(futureDayLabel, futureDayInput)
+        inputForm.addRow(futureDayLabel, self.futureDayInput)
         generate_button = QPushButton('Generate')
         generate_button.clicked.connect(lambda x:self.set_panel(2))
-        generate_button.clicked.connect(lambda x:self.generate(dateInput.text(), int(futureDayInput.text())))
+        generate_button.clicked.connect(lambda x:self.generate(dateInput.text(), int(self.futureDayInput.text())))
         inputForm.addRow(generate_button)
 
         page1Layout.addLayout(inputForm)
@@ -220,20 +220,22 @@ class DataPanel(QWidget):
         # End of Top Tab setup -------------------------
 
         # Setup regional stats
-        model3 = QStandardItemModel()
+        self.model3 = QStandardItemModel()
 
         # Call a function to get the number of future days so we can add that to the row count
         numFutureDays = 1 #make function ts
 
-        model3.setRowCount(5 + numFutureDays + 1)        # Date, temp, precip, snow, wind
-        model3.setColumnCount(2)     # label, value
+        self.model3.setRowCount(5 + numFutureDays + 1)        # Date, temp, precip, snow, wind
+        self.model3.setColumnCount(2)     # label, value
 
         for row in range(5):
             for column in range(2):
                 item = QStandardItem()    # Load data in here for now
-                model3.setItem(row, column, item)
+                self.model3.setItem(row, column, item)
 
-        countyStats.setModel(model3)
+        countyStats.setModel(self.model3)
+        countyStats.verticalHeader().hide()
+        countyStats.horizontalHeader().hide()
 
         page3Layout.addWidget(countyStats)
 
@@ -256,11 +258,39 @@ class DataPanel(QWidget):
     @Slot()
     def generate(self, date, num_days):
         #TODO: sanitize input <- notify user if not valid
+        # good = True
+        # year = date[0:4]    #year
+        # month = date[5:7]    #month
+        # day = date[8:10]   #day
+        # LDEBUG(f"year: {year}, month: {month}, day: {day}")
+
+        # for char in year:
+        #     if char not in '0123456789':
+        #         good = False
+        # for char in month:
+        #     if char not in '0123456789':
+        #         good = False
+        # for char in day:
+        #     if char not in '0123456789':
+        #         good = False
+
+        # if good == False:
+        #     LDEBUG("wrong input")
+        #     self.wrong_input_error()
+        # else:
+        #     actual_date = f"{year}-{month}-{day}"   
+        #     best_forecaster.generate(date, num_days, obs_path='../backend/preprocessing/county_variables.csv', forecast_path='forecast.csv')
+        #     self.fill_regional_data(num_days)
+        #     LDEBUG("generated data")
+
+        # actual_date = f"{year}-{month}-{day}"   
         best_forecaster.generate(date, num_days, obs_path='../backend/preprocessing/county_variables.csv', forecast_path='forecast.csv')
         self.fill_regional_data(num_days)
         LDEBUG("generated data")
 
     def fill_regional_data(self, num_days):
+
+        # Reads the forcast file
         ff = pd.read_csv("forecast.csv")
 
         total_temp = 0
@@ -268,12 +298,17 @@ class DataPanel(QWidget):
         total_snow = 0
         total_wind = 0
 
+        # Set labels
         self.model2.setItem(0, 1, QStandardItem("temperature"))
         self.model2.setItem(0, 2, QStandardItem("precipitation"))
         self.model2.setItem(0, 3, QStandardItem("snow"))
         self.model2.setItem(0, 4, QStandardItem("wind speed"))
+
+        # Iterates through and adds the totals up before averaging them and plugging them into the table iterating through how many days into future desired
         for i in range(num_days):
-            self.model2.setItem(i+1, 0, QStandardItem(f"day {i}"))
+            self.model2.setItem(i+1, 0, QStandardItem(f"Day {i} : {ff.loc[i, 'Date']}"))
+
+            # Does one row of the table at a time
             for region in county_stations:
                 total_temp    += ff.loc[i, region + "_temperature"]
                 total_precip  += ff.loc[i, region + "_precipitation"]
@@ -283,10 +318,14 @@ class DataPanel(QWidget):
             average_precip = QStandardItem(f'{(total_precip / 29):.2f}')
             average_snow   = QStandardItem(f'{(total_snow / 29):.2f}')
             average_wind   = QStandardItem(f'{(total_wind / 29):.2f}')
+
+            # Resets each day
             total_temp = 0
             total_precip = 0
             total_snow = 0
             total_wind = 0
+
+            # Setting values in that row
             self.model2.setItem(i+1, 1, average_temp)
             self.model2.setItem(i+1, 2, average_precip)
             self.model2.setItem(i+1, 3, average_snow)
@@ -294,3 +333,59 @@ class DataPanel(QWidget):
                 
         #average data
         #fill table
+
+    def wrong_input_error(self):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Icon.Warning)
+        msg.setText("Invalid Input")
+        msg.setWindowTItle("Error")
+        msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg.exec()
+
+    def fill_county_data(self, county):
+
+        # Reads the forcast file
+        ff = pd.read_csv("forecast.csv")
+
+        county_total_temp = 0
+        county_total_precip = 0
+        county_total_snow = 0
+        county_total_wind = 0
+
+        # Set labels
+        self.model3.setItem(0, 1, QStandardItem("temperature"))
+        self.model3.setItem(0, 2, QStandardItem("precipitation"))
+        self.model3.setItem(0, 3, QStandardItem("snow"))
+        self.model3.setItem(0, 4, QStandardItem("wind speed"))
+
+        # Iterates through and adds the totals up before averaging them and plugging them into the table iterating through how many days into future desired
+        for i in range(int(self.futureDayInput.text())):
+            self.model3.setItem(i+1, 0, QStandardItem(f"Day {i}: {ff.loc[i, 'Date']}"))
+
+            specific_Date = ff.loc[i, "Date"]
+            for j in range(4):
+
+                if ff.loc[j, "Date"] == specific_Date:
+                    county_total_temp    += ff.loc[j, county + "_temperature"]
+                    county_total_precip  += ff.loc[j, county + "_precipitation"]
+                    county_total_snow    += ff.loc[j, county + "_snow"]
+                    county_total_wind    += ff.loc[j, county + "_wind_speed"]
+            
+            county_average_temp   = QStandardItem(f'{(county_total_temp / 4):.2f}') #TODO: 4 hardcoded, fix
+            county_average_precip = QStandardItem(f'{(county_total_precip / 4):.2f}')
+            county_average_snow   = QStandardItem(f'{(county_total_snow / 4):.2f}')
+            county_average_wind   = QStandardItem(f'{(county_total_wind / 4):.2f}')
+
+            # Resets each day
+            county_total_temp = 0
+            county_total_precip = 0
+            county_total_snow = 0
+            county_total_wind = 0
+
+            # Setting values in that row
+            self.model3.setItem(i+1, 1, county_average_temp)
+            self.model3.setItem(i+1, 2, county_average_precip)
+            self.model3.setItem(i+1, 3, county_average_snow)
+            self.model3.setItem(i+1, 4, county_average_wind)
+
+
