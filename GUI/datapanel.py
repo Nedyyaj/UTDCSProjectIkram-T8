@@ -97,20 +97,20 @@ class DataPanel(QWidget):
         page1Layout.addWidget(titleLabel)
 
         # default Table view setup
-        model = QStandardItemModel()
+        #model = QStandardItemModel()
 
-        model.setRowCount(5)        # Date, temp, precip, snow, wind
-        model.setColumnCount(2)     # label, value
+        #model.setRowCount(5)        # Date, temp, precip, snow, wind
+        #model.setColumnCount(2)     # label, value
 
-        for row in range(5):
-            for column in range(2):
-                item = QStandardItem()    # Load data in here for now
-                model.setItem(row, column, item)
+        #for row in range(5):
+        #    for column in range(2):
+        #        item = QStandardItem()    # Load data in here for now
+        #        model.setItem(row, column, item)
 
-        defaultTable.setItemDelegate(delegate)
+        #defaultTable.setItemDelegate(delegate)
 
-        defaultTable.setModel(model)
-        page1Layout.addWidget(defaultTable)
+        #defaultTable.setModel(model)
+        #page1Layout.addWidget(defaultTable)
 
         # input Form setup
         formTitle = QLabel('Fill this in to begin forecasting')
