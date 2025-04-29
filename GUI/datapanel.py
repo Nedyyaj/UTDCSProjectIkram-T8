@@ -143,24 +143,25 @@ class DataPanel(QWidget):
 
         # Create all widgets for page 2
         self.page2 = QWidget()
-        titleLabel2 = QLabel(f"Regional Forecast for {self.dateInput.text()}")
+        self.titleLabel2 = QLabel(f"Regional Forecast for {self.dateInput.text()}")
         page2Layout = QVBoxLayout()
         topTab = QHBoxLayout()        # Contains title and back button
         regionalStats = QTableView()
 
+
         # Top Tab setup ---------------------------------
         # We create a specific button which goes to page 1 so it can be reused
 
-        titleLabel2.setAlignment(Qt.AlignCenter)
-        titleLabel2.setMaximumHeight(50)
-        titleLabel2.setStyleSheet("font-size: 25px; font-weight: bold;")
-        titleLabel2.setMinimumWidth(600)        # Adjust later
+        self.titleLabel2.setAlignment(Qt.AlignCenter)
+        self.titleLabel2.setMaximumHeight(50)
+        self.titleLabel2.setStyleSheet("font-size: 25px; font-weight: bold;")
+        self.titleLabel2.setMinimumWidth(600)        # Adjust later
 
         backButton = QPushButton('Back to Date Select')
         backButton.setMaximumWidth(200)          # Adjust later
         backButton.clicked.connect(lambda x:self.set_panel(1))
 
-        topTab.addWidget(titleLabel2)
+        topTab.addWidget(self.titleLabel2)
         topTab.addWidget(backButton)
 
         page2Layout.addLayout(topTab)
@@ -303,6 +304,9 @@ class DataPanel(QWidget):
             best_forecaster.generate(date, int(self.futureDayInput.text()), obs_path='../backend/preprocessing/county_variables.csv', forecast_path='forecast.csv')
             self.fill_regional_data(int(self.futureDayInput.text()))
             LDEBUG("generated data")
+            LDEBUG(f"{self.dateInput.text()}")
+            LDEBUG(self.titleLabel2.text())
+            self.titleLabel2.setText(f"Regional Forecast for {self.dateInput.text()}")
 
 
     def fill_regional_data(self, num_days):
@@ -323,7 +327,7 @@ class DataPanel(QWidget):
 
         # Iterates through and adds the totals up before averaging them and plugging them into the table iterating through how many days into future desired
         for i in range(num_days):
-            self.model2.setItem(i+1, 0, QStandardItem(f"Day {i}: {ff.loc[i, 'Date']}"))
+            self.model2.setItem(i+1, 0, QStandardItem(f"Day {i}"))
 
             # Does one row of the table at a time
             for region in county_stations:
@@ -378,7 +382,7 @@ class DataPanel(QWidget):
 
         # Iterates through and adds the totals up before averaging them and plugging them into the table iterating through how many days into future desired
         for i in range(int(self.futureDayInput.text())):
-            self.model3.setItem(i+1, 0, QStandardItem(f"Day {i}: {ff.loc[i, 'Date']}"))
+            self.model3.setItem(i+1, 0, QStandardItem(f"Day {i}"))
 
             specific_Date = ff.loc[i, "Date"]
             for j in range(4):
