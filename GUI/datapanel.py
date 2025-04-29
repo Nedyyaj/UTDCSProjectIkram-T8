@@ -366,7 +366,7 @@ class DataPanel(QWidget):
 
     def fill_county_data(self, county):
 
-        self.titleLabel3.setText(f"County Forecast for {county} county")
+        self.titleLabel3.setText(f"County Forecast for {county} County")
         # Reads the forcast file
         ff = pd.read_csv("forecast.csv")
 
