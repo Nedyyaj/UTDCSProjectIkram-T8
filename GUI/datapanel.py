@@ -203,6 +203,7 @@ class DataPanel(QWidget):
         page3Layout = QVBoxLayout()
         topTab2 = QHBoxLayout()        # Contains title and back button
         countyStats = QTableView()
+        buttonBox = QVBoxLayout()
 
         # Top Tab setup ---------------------------------
         # We create another specific button which goes to page 2
@@ -221,8 +222,9 @@ class DataPanel(QWidget):
         backButton3.clicked.connect(lambda x:self.set_panel(1))
 
         topTab2.addWidget(self.titleLabel3)
-        topTab2.addWidget(backButton3)
-        topTab2.addWidget(backButton2)
+        buttonBox.addWidget(backButton2)
+        buttonBox.addWidget(backButton3)
+        topTab2.addLayout(buttonBox)
         
         page3Layout.addLayout(topTab2)
 
