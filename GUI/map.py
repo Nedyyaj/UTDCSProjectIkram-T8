@@ -2,6 +2,8 @@ from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QMainWindow, 
 from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
+import matplotlib.colors as clr
+import matplotlib.cm as cm
 import geopandas
 import fiona
 import shapefile
@@ -37,7 +39,7 @@ class MapCanvas(FigureCanvas):
         self.last_patch = ''
         self.selected_patch = ''
 
-        cmap = plt.cm.Pastel1
+        cmap = clr.ListedColormap(cm.get_cmap("tab20c").colors[:4])
         plot = self.counties.plot(ax=self.axes, cmap=cmap)
         self.counties.apply(lambda x: plot.annotate(text=x['CNTY_NM'], xy=x.geometry.centroid.coords[0], ha='center'), axis=1)
 
@@ -62,7 +64,7 @@ class MapCanvas(FigureCanvas):
             boundary = shape(rec['geometry'])
             if boundary.distance(mouse_pos) < min_distance:
                 name = rec['properties']['CNTY_NM']
-                patch = plt.Polygon(list(boundary.exterior.coords), closed=True, facecolor='green')
+                patch = plt.Polygon(list(boundary.exterior.coords), closed=True, facecolor='gray')
                 if self.selected_patch != '':
                     self.selected_patch.remove()
                 self.axes.add_patch(patch)
@@ -91,7 +93,7 @@ class MapCanvas(FigureCanvas):
             boundary = shape(rec['geometry'])
             if boundary.distance(mouse_pos) < min_distance:
                 name = rec['properties']['CNTY_NM']
-                patch = plt.Polygon(list(boundary.exterior.coords), closed=True, facecolor='gray')
+                patch = plt.Polygon(list(boundary.exterior.coords), closed=True, facecolor='white')
                 if self.last_patch != '':
                     self.last_patch.remove()
                 self.axes.add_patch(patch)
