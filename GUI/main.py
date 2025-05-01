@@ -96,10 +96,10 @@ class MainWindow(QMainWindow):
                 border: 1px solid #000000;  /* Table border color */
             }
             QPushButton:hover {
-                background-color: #A1E3F9;  /* Button hover color */ }
+                background-color: #A1E3F9;  /* Button hover color */
                 color: #000000;  /* Button text color */
                 border: 1px solid #000000;  /* Table border color */
-            
+            }
             QTableView {
                 background-color: #A1E3F9;  /* Table background color */
                 color: #000000;  /* Table text color */

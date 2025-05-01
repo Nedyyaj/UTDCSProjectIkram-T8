@@ -134,7 +134,7 @@ class DataPanel(QWidget):
         inputForm.addRow(formTitle)
         inputForm.addRow(dateLabel, self.dateInput)
         #inputForm.addRow(futureDayLabel, self.futureDayInput)
-        generate_button = QPushButton('Generate Forecast')
+        generate_button = QPushButton('Generate 5-Day Forecast')
         generate_button.clicked.connect(lambda x:self.set_panel(2))
         generate_button.clicked.connect(lambda x:self.generate(self.dateInput.text()))
         inputForm.addRow(generate_button)
