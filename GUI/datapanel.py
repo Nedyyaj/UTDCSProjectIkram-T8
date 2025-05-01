@@ -127,13 +127,13 @@ class DataPanel(QWidget):
         # input Form setup
         formTitle = QLabel('Fill this in to begin forecasting')
         dateLabel = QLabel('Starting Date (YYYY-MM-dd, up to 2025-03-01):')             # We need to input check this!!!!!    
-        futureDayLabel = QLabel('Days into future to forecast (< 6):')
+        #futureDayLabel = QLabel('Days into future to forecast (< 6):')
         self.dateInput = QLineEdit()
-        self.futureDayInput = QLineEdit()
+        #self.futureDayInput = QLineEdit()
 
         inputForm.addRow(formTitle)
         inputForm.addRow(dateLabel, self.dateInput)
-        inputForm.addRow(futureDayLabel, self.futureDayInput)
+        #inputForm.addRow(futureDayLabel, self.futureDayInput)
         generate_button = QPushButton('Generate Forecast')
         generate_button.clicked.connect(lambda x:self.set_panel(2))
         generate_button.clicked.connect(lambda x:self.generate(self.dateInput.text()))
@@ -155,7 +155,7 @@ class DataPanel(QWidget):
 
         # Create all widgets for page 2
         self.page2 = QWidget()
-        self.titleLabel2 = QLabel(f"Regional Forecast for {self.dateInput.text()}")
+        self.titleLabel2 = QLabel(f"Forecasted Regional Averages")
         page2Layout = QVBoxLayout()
         topTab = QHBoxLayout()        # Contains title and back button
         regionalStats = QTableView()
@@ -166,7 +166,7 @@ class DataPanel(QWidget):
         self.titleLabel2.setAlignment(Qt.AlignCenter)
         self.titleLabel2.setMaximumHeight(50)
         self.titleLabel2.setStyleSheet("font-size: 25px; font-weight: bold;")
-        self.titleLabel2.setMinimumWidth(600)        # Adjust later
+        self.titleLabel2.setMinimumWidth(500)        # Adjust later
 
         backButton = QPushButton('Back to Date Select')
         backButton.setMaximumWidth(200)          # Adjust later
@@ -226,7 +226,7 @@ class DataPanel(QWidget):
         self.titleLabel3.setAlignment(Qt.AlignCenter)
         self.titleLabel3.setMaximumHeight(50)
         self.titleLabel3.setStyleSheet("font-size: 25px; font-weight: bold;")
-        self.titleLabel3.setMinimumWidth(600)        # Adjust later
+        self.titleLabel3.setMinimumWidth(500)        # Adjust later
 
         backButton2 = QPushButton('Back to Regional Data')
         backButton2.setMaximumWidth(200)          # Adjust later
@@ -292,11 +292,11 @@ class DataPanel(QWidget):
         if len(date) != 10:
             good = False
         else:
-            for char in self.futureDayInput.text():
-                if char not in '0123456789':
-                    good = False
-            if int(self.futureDayInput.text()) < 1 or int(self.futureDayInput.text()) > 5:
-                good = False
+            # for char in self.futureDayInput.text():
+            #     if char not in '0123456789':
+            #         good = False
+            # if int(self.futureDayInput.text()) < 1 or int(self.futureDayInput.text()) > 5:
+            #     good = False
 
             year =  date[0:4]    #year
             month = date[5:7]    #month
@@ -319,10 +319,11 @@ class DataPanel(QWidget):
             self.wrong_input_error()
             
         else:
+            future_days = 5
             actual_date = f"{year}-{month}-{day}"   
-            best_forecaster.generate(date, int(self.futureDayInput.text()), obs_path='../backend/preprocessing/county_variables.csv', forecast_path='forecast.csv')
-            self.fill_regional_data(int(self.futureDayInput.text()))
-            self.titleLabel2.setText(f"Regional Forecast for {actual_date}")
+            best_forecaster.generate(date, future_days, obs_path='../backend/preprocessing/county_variables.csv', forecast_path='forecast.csv')
+            self.fill_regional_data(future_days)
+            self.titleLabel2.setText(f"Forecasted Regional Averages")
             LDEBUG("generated data")
 
 
@@ -421,7 +422,7 @@ class DataPanel(QWidget):
 
     def fill_county_data(self, county):
 
-        self.titleLabel3.setText(f"County Forecast for {county} County")
+        self.titleLabel3.setText(f"Forecast for {county} County")
         # Reads the forcast file
         ff = pd.read_csv("forecast.csv")
 
@@ -442,7 +443,7 @@ class DataPanel(QWidget):
         winds = []
 
         # Iterates through and adds the totals up before averaging them and plugging them into the table iterating through how many days into future desired
-        for i in range(int(self.futureDayInput.text())):
+        for i in range(5):
             self.model3.setItem(i+1, 0, QStandardItem(f"{ff.loc[4*i, 'Date']}"))
 
             specific_Date = ff.loc[4*i, "Date"]
