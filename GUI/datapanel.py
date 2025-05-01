@@ -9,6 +9,18 @@ import pandas as pd
 import pickle
 from forecast import Forecaster
 
+from matplotlib.backends.backend_qtagg import FigureCanvas
+from matplotlib.figure import Figure
+
+class MplCanvas(FigureCanvas):
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.temp_ax = fig.add_subplot(221)
+        self.prcp_ax = fig.add_subplot(222)
+        self.snow_ax = fig.add_subplot(223)
+        self.wind_ax = fig.add_subplot(224)
+        super().__init__(fig)
+
 
 def LDEBUG(message):
     print(f"[DEBUG]: {message}")
@@ -114,15 +126,15 @@ class DataPanel(QWidget):
 
         # input Form setup
         formTitle = QLabel('Fill this in to begin forecasting')
-        dateLabel = QLabel('Starting Date (Format: YYYY-MM-dd) (Up to 2025-03-01):')             # We need to input check this!!!!!    
-        futureDayLabel = QLabel('Days into future to forecast (Limit: 5):')
+        dateLabel = QLabel('Starting Date (YYYY-MM-dd, up to 2025-03-01):')             # We need to input check this!!!!!    
+        futureDayLabel = QLabel('Days into future to forecast (< 6):')
         self.dateInput = QLineEdit()
         self.futureDayInput = QLineEdit()
 
         inputForm.addRow(formTitle)
         inputForm.addRow(dateLabel, self.dateInput)
         inputForm.addRow(futureDayLabel, self.futureDayInput)
-        generate_button = QPushButton('Generate')
+        generate_button = QPushButton('Generate Forecast')
         generate_button.clicked.connect(lambda x:self.set_panel(2))
         generate_button.clicked.connect(lambda x:self.generate(self.dateInput.text()))
         inputForm.addRow(generate_button)
@@ -170,11 +182,11 @@ class DataPanel(QWidget):
         # Setup regional stats
         self.model2 = QStandardItemModel()
 
-        self.model2.setRowCount(6)        # Date, temp, precip, snow, wind
-        self.model2.setColumnCount(6)     # label, value
+        self.model2.setRowCount(5)        # Date, temp, precip, snow, wind
+        self.model2.setColumnCount(5)     # label, value
 
-        for row in range(6):
-            for column in range(6):
+        for row in range(5):
+            for column in range(5):
                 item = QStandardItem()    # Load data in here for now
                 self.model2.setItem(row, column, item)
 
@@ -185,6 +197,9 @@ class DataPanel(QWidget):
 
         page2Layout.addWidget(regionalStats)
 
+        self.regionCanvas = MplCanvas(self, width=5, height=4, dpi=100)
+        #self.regionCanvas.axes.plot([0,1,2,3,4], [10,1,20,3,40])
+        page2Layout.addWidget(self.regionCanvas)
 
         # Add page 2 to stacked layout
         self.page2.setLayout(page2Layout)
@@ -234,7 +249,7 @@ class DataPanel(QWidget):
         self.model3 = QStandardItemModel()
 
         # Call a function to get the number of future days so we can add that to the row count
-        numFutureDays = 1 #make function ts
+        numFutureDays = 0 #make function ts
 
         self.model3.setRowCount(5 + numFutureDays + 1)        # Date, temp, precip, snow, wind
         self.model3.setColumnCount(2)     # label, value
@@ -251,6 +266,9 @@ class DataPanel(QWidget):
 
         page3Layout.addWidget(countyStats)
 
+        self.countyCanvas = MplCanvas(self, width=5, height=4, dpi=100)
+        #self.countyCanvas.axes.plot([0,1,2,3,4], [10,1,20,3,40])
+        page3Layout.addWidget(self.countyCanvas)
 
         # Add page 3 to stacked layout
         self.page3.setLayout(page3Layout)
@@ -324,11 +342,18 @@ class DataPanel(QWidget):
         self.model2.setItem(0, 3, QStandardItem("Snow"))
         self.model2.setItem(0, 4, QStandardItem("Wind Speed"))
 
+        dates = []
+        temps = []
+        prcps = []
+        snows = []
+        winds = []
+
         # Iterates through and adds the totals up before averaging them and plugging them into the table iterating through how many days into future desired
         for i in range(num_days):
             self.model2.setItem(i+1, 0, QStandardItem(f"{ff.loc[4*i, 'Date']}"))
 
             specific_Date = ff.loc[4*i, "Date"]
+            dates.append(specific_Date)
 
             # Does one row of the table at a time
             for region in county_stations:
@@ -343,6 +368,11 @@ class DataPanel(QWidget):
             total_snow2   = QStandardItem(f'{(total_snow):.2f}')
             average_wind   = QStandardItem(f'{(total_wind / (29 * 4)):.2f}')
 
+            temps.append((total_temp / (29 * 4)))
+            prcps.append(total_precip)
+            snows.append(total_snow)
+            winds.append((total_wind / (29 * 4)))
+
             # Resets each day
             total_temp = 0
             total_precip = 0
@@ -354,7 +384,30 @@ class DataPanel(QWidget):
             self.model2.setItem(i+1, 2, total_precip2)   # use total instead of average because rain is cumulative
             self.model2.setItem(i+1, 3, total_snow2)
             self.model2.setItem(i+1, 4, average_wind)
-                
+        
+        # clear existing figures
+        self.regionCanvas.temp_ax.cla()
+        self.regionCanvas.prcp_ax.cla()
+        self.regionCanvas.snow_ax.cla()
+        self.regionCanvas.wind_ax.cla()
+
+        # set titles
+        self.regionCanvas.temp_ax.set_title('Average Temperature')
+        self.regionCanvas.prcp_ax.set_title('Total Precipitation')
+        self.regionCanvas.snow_ax.set_title('Total Snowfall')
+        self.regionCanvas.wind_ax.set_title('Average Wind Speed')
+
+        # plot data
+        print(temps)
+        self.regionCanvas.temp_ax.plot(range(1, len(temps) + 1), temps)
+        print(prcps)
+        self.regionCanvas.prcp_ax.plot(range(1, len(prcps) + 1), prcps)
+        print(snows)
+        self.regionCanvas.snow_ax.plot(range(1, len(snows) + 1), snows)
+        print(winds)
+        self.regionCanvas.wind_ax.plot(range(1, len(winds) + 1), winds)
+
+        self.regionCanvas.draw()
         #average data
         #fill table
 
@@ -383,6 +436,11 @@ class DataPanel(QWidget):
         self.model3.setItem(0, 3, QStandardItem("Snow"))
         self.model3.setItem(0, 4, QStandardItem("Wind Speed"))
 
+        temps = []
+        prcps = []
+        snows = []
+        winds = []
+
         # Iterates through and adds the totals up before averaging them and plugging them into the table iterating through how many days into future desired
         for i in range(int(self.futureDayInput.text())):
             self.model3.setItem(i+1, 0, QStandardItem(f"{ff.loc[4*i, 'Date']}"))
@@ -401,6 +459,11 @@ class DataPanel(QWidget):
             county_total_snow2   = QStandardItem(f'{(county_total_snow):.2f}')
             county_average_wind   = QStandardItem(f'{(county_total_wind / 4):.2f}')
 
+            temps.append((county_total_temp / 4))
+            prcps.append(county_total_precip)
+            snows.append(county_total_snow)
+            winds.append((county_total_wind / 4))
+
             # Resets each day
             county_total_temp = 0
             county_total_precip = 0
@@ -412,6 +475,30 @@ class DataPanel(QWidget):
             self.model3.setItem(i+1, 2, county_total_precip2)
             self.model3.setItem(i+1, 3, county_total_snow2)
             self.model3.setItem(i+1, 4, county_average_wind)
+
+        # clear existing figures
+        self.countyCanvas.temp_ax.cla()
+        self.countyCanvas.prcp_ax.cla()
+        self.countyCanvas.snow_ax.cla()
+        self.countyCanvas.wind_ax.cla()
+
+        # set titles
+        self.countyCanvas.temp_ax.set_title('Average Daily Temperature')
+        self.countyCanvas.prcp_ax.set_title('Total Daily Precipitation')
+        self.countyCanvas.snow_ax.set_title('Total Daily Snowfall')
+        self.countyCanvas.wind_ax.set_title('Average Daily Wind Speed')
+
+        # plot data
+        print(temps)
+        self.countyCanvas.temp_ax.plot(range(1, len(temps) + 1), temps)
+        print(prcps)
+        self.countyCanvas.prcp_ax.plot(range(1, len(prcps) + 1), prcps)
+        print(snows)
+        self.countyCanvas.snow_ax.plot(range(1, len(snows) + 1), snows)
+        print(winds)
+        self.countyCanvas.wind_ax.plot(range(1, len(winds) + 1), winds)
+
+        self.countyCanvas.draw()
 
     
 class ReadOnlyDelegate(QStyledItemDelegate):
