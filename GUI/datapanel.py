@@ -15,10 +15,32 @@ from matplotlib.figure import Figure
 class MplCanvas(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
+        
+        # Adjust subplot spacing and margins
+        fig.subplots_adjust(
+            left=0.1,    # Left margin
+            right=0.9,   # Right margin
+            bottom=0.1,  # Bottom margin
+            top=0.9,     # Top margin
+            wspace=0.4, # Horizontal space between subplots
+            hspace=0.4  # Vertical space between subplots
+        )
+        
+        # Create subplots with smaller size
         self.temp_ax = fig.add_subplot(221)
         self.prcp_ax = fig.add_subplot(223)
         self.snow_ax = fig.add_subplot(224)
         self.wind_ax = fig.add_subplot(222)
+        
+        # Make font sizes smaller for titles
+        self.temp_ax.set_title('Temperature', fontsize=10)
+        self.prcp_ax.set_title('Precipitation', fontsize=10)
+        self.snow_ax.set_title('Snow', fontsize=10)
+        self.wind_ax.set_title('Wind Speed', fontsize=10)
+        
+        # Apply tight layout to prevent overlaps
+        fig.tight_layout()
+        
         super().__init__(fig)
 
 def LDEBUG(message):
