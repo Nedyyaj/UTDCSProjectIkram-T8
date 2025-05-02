@@ -16,11 +16,10 @@ class MplCanvas(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.temp_ax = fig.add_subplot(221)
-        self.prcp_ax = fig.add_subplot(222)
-        self.snow_ax = fig.add_subplot(223)
-        self.wind_ax = fig.add_subplot(224)
+        self.prcp_ax = fig.add_subplot(223)
+        self.snow_ax = fig.add_subplot(224)
+        self.wind_ax = fig.add_subplot(222)
         super().__init__(fig)
-
 
 def LDEBUG(message):
     print(f"[DEBUG]: {message}")
@@ -71,8 +70,6 @@ county_dict = {
     'Bosque': 29
 }
 
-
-
 class CountyData():
     def __init__(self, name):
         self.name = name
@@ -86,6 +83,7 @@ class DataPanel(QWidget):
         super(DataPanel, self).__init__()
         palette = QPalette()
         palette.setColor(QPalette.ColorRole.Window, QColor(54, 116, 181))  # Background color
+        #palette.setColor(QPalette.ColorRole.Window, QColor(0, 0, 0))  # Background color
 
         # Creates the stacked layout for the county data #
         delegate = ReadOnlyDelegate(self)
@@ -398,14 +396,19 @@ class DataPanel(QWidget):
         self.regionCanvas.snow_ax.set_title('Total Snowfall')
         self.regionCanvas.wind_ax.set_title('Average Wind Speed')
 
+        categories = ['1', '2', '3', '4', '5']
         # plot data
         print(temps)
+        #self.regionCanvas.temp_ax.bar(categories, temps)
         self.regionCanvas.temp_ax.plot(range(1, len(temps) + 1), temps)
         print(prcps)
-        self.regionCanvas.prcp_ax.plot(range(1, len(prcps) + 1), prcps)
+        self.regionCanvas.prcp_ax.bar(categories, prcps)
+        #self.regionCanvas.prcp_ax.plot(range(1, len(prcps) + 1), prcps)
         print(snows)
-        self.regionCanvas.snow_ax.plot(range(1, len(snows) + 1), snows)
+        self.regionCanvas.snow_ax.bar(categories, snows)
+        #self.regionCanvas.snow_ax.plot(range(1, len(snows) + 1), snows)
         print(winds)
+        #self.regionCanvas.wind_ax.bar(categories, winds)
         self.regionCanvas.wind_ax.plot(range(1, len(winds) + 1), winds)
 
         self.regionCanvas.draw()
@@ -490,13 +493,19 @@ class DataPanel(QWidget):
         self.countyCanvas.wind_ax.set_title('Average Daily Wind Speed')
 
         # plot data
+        categories = ['1', '2', '3', '4', '5']
+        # plot data
         print(temps)
+        #self.regionCanvas.temp_ax.bar(categories, temps)
         self.countyCanvas.temp_ax.plot(range(1, len(temps) + 1), temps)
         print(prcps)
-        self.countyCanvas.prcp_ax.plot(range(1, len(prcps) + 1), prcps)
+        self.countyCanvas.prcp_ax.bar(categories, prcps)
+        #self.regionCanvas.prcp_ax.plot(range(1, len(prcps) + 1), prcps)
         print(snows)
-        self.countyCanvas.snow_ax.plot(range(1, len(snows) + 1), snows)
+        self.countyCanvas.snow_ax.bar(categories, snows)
+        #self.regionCanvas.snow_ax.plot(range(1, len(snows) + 1), snows)
         print(winds)
+        #self.regionCanvas.wind_ax.bar(categories, winds)
         self.countyCanvas.wind_ax.plot(range(1, len(winds) + 1), winds)
 
         self.countyCanvas.draw()
