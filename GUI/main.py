@@ -67,36 +67,34 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(splitter)
         
         # Color
-        self.setStyleSheet("""
-            QMainWindow {
-                background-color: #578FCA;  /* Background color */
-                color: #000000;  /* Text color */
-            }
-            QWidget {
-                background-color: #3674B5;  /* Background color */
-                color: #000000;  /* Text color */
-            }
-            QSplitter{
-                background-color: #578FCA;  /* Background color */
-            }
+# colors (hex, darker to lighter):
+# orange
+ #E6550D
+ #FD8D3C
+ #FDAE6B
+ #FDD0A2
+# blue
+ #3182BD
+ #6BAED6
+ #9ECAE1
+ #C6DBEF
 
-            QMainWindow {
-                background-color: #3674B5;  /* Background color */
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #FFFFFF;
                 color: #000000;  /* Text color */
             }
-            
             QLabel {
-                background-color: #578FCA;  /* Label background color */
+                background-color: #FD8D3C;  /* Label background color */
                 color: #000000;  /* Label text color */
             }
-
             QPushButton {
-                background-color: #578FCA;  /* Button color */
+                background-color: #3182BD;  /* Button color */
                 color: #FFFFFF;  /* Button text color */
                 border: 1px solid #000000;  /* Table border color */
             }
             QPushButton:hover {
-                background-color: #A1E3F9;  /* Button hover color */
+                background-color: #6BAED6;  /* Button hover color */
                 color: #000000;  /* Button text color */
                 border: 1px solid #000000;  /* Table border color */
             }

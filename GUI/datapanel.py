@@ -410,6 +410,16 @@ class DataPanel(QWidget):
         print(winds)
         #self.regionCanvas.wind_ax.bar(categories, winds)
         self.regionCanvas.wind_ax.plot(range(1, len(winds) + 1), winds)
+# orange
+ #E6550D
+ #FD8D3C
+ #FDAE6B
+ #FDD0A2
+# blue
+ #3182BD
+ #6BAED6
+ #9ECAE1
+ #C6DBEF
 
         self.regionCanvas.draw()
         #average data

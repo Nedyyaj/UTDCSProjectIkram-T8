@@ -39,7 +39,7 @@ class MapCanvas(FigureCanvas):
         self.last_patch = ''
         self.selected_patch = ''
 
-        cmap = clr.ListedColormap(cm.get_cmap("tab20c").colors[:4])
+        cmap = clr.ListedColormap(cm.get_cmap("tab20c").colors[:8])
         plot = self.counties.plot(ax=self.axes, cmap=cmap)
         self.counties.apply(lambda x: plot.annotate(text=x['CNTY_NM'], xy=x.geometry.centroid.coords[0], ha='center'), axis=1)
 
