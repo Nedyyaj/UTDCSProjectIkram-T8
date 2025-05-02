@@ -1,0 +1,5 @@
+priority order
+
+1. have a label appear in map when it is able to be clicked
+2. have selected/hovered counties return to their normal colors when back buttons are pressed
+3. change data graph colors?
